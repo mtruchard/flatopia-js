@@ -16,7 +16,7 @@ class World {
                 this.add( create(attributes.objects[i]) );
             }
         }
-        this.$canvas = null;
+        //this.$canvas = null;
         this.canvas = null;
         this.canvasWidth;
         this.canvasHeight;
@@ -29,7 +29,7 @@ class World {
         
         var self = this;
         window.onload = function() {
-            self.$canvas = $('#'+self.canvasId);
+            //self.$canvas = $('#'+self.canvasId);
             self.canvas = document.getElementById(self.canvasId);
             self.canvas.addEventListener('mousedown', self.mouseEvent.bind(self), false );
             self.canvas.addEventListener('touchstart', self.mouseEvent.bind(self), false );
@@ -90,7 +90,8 @@ class World {
     }; */
     
     setBackground(backgroundUrl) {
-        this.$canvas.css('background-image', 'url("' + backgroundUrl + '")');
+        //this.$canvas.css('background-image', 'url("' + backgroundUrl + '")');
+        this.canvas.style.backgroundImage = 'url("' + backgroundUrl + '")';
     }
     
     /*
