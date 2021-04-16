@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<body>
+<canvas id="theWorld" width="1000" height="500"></canvas>
+<script type="text/javascript" src="${loki.web.modelResUrl('urn:opensource:libs:jquery:3.2.1!jquery-3.2.1.min.js')}"></script>
+<script type="text/javascript" src="${loki.web.pageUrlWithCacheCheck('urn:com:loki:js:app:pages:lokiJs')}"></script>
+<script type="text/javascript" src="${loki.web.modelResUrl('urn:com:loki:examples:app:pages:drawingPage!world.js')}"></script>
+<script>
+
+var world = new World({
+    canvasId:"theWorld",
+    createMode: false,
+    tps:30
+});
+
+var box = new Box({name:"box", width: 100, height: 100, depth:100, x:-200, y:0, h:0});
+world.add(box);
+box.moveTo( new Position({x:-200,y:0,h:1000}));
+box.moveTo( new Position({x:-200,y:0,h:0}));
+box.moveTo( new Position({x:200,y:0,h:0}));
+box.moveTo( new Position({x:200,y:200,h:0}));
+box.moveTo( new Position({x:-200,y:200,h:0}));
+box.moveTo( new Position({x:-200,y:0,h:0}));
+box.moveTo( new Position({x:0,y:0,h:0}));
+box.moveTo( new Position({x:0,y:3000,h:0}));
+
+var shape = new Shape();
+shape.setLineColor("darkblue");
+shape.setFillColor("magenta");
+shape.startAt(20-45,0,90);
+shape.lineTo(50-45,0,0);
+shape.lineTo(80-45,0,90);
+shape.lineTo(10-45,0,30);
+shape.lineTo(100-45,0,30);
+shape.lineTo(20-45,0,90);
+//world.add(shape);
+
+//var alien = new Img({name:"body", left: 0, top: 0, imageUrn:"urn:com:loki:examples:app:pages:drawingPage!alien.png"});
+//world.add(alien);
+
+//shape.move(200,0,0);
+//shape.move(0,200,0);
+//shape.move(-200,0,0);
+//shape.move(0,-200,0);
+
+
+/*
+ * CONTROLS
+ */
+var controlsOn = true;
+world.onEvent( function(e) {
+    var key = e.key;
+    if ( !key || !controlsOn ) return;
+    
+    if ( key === "x" ) {
+        world.toggleCreateMode();
+    }
+});
+
+</script>
