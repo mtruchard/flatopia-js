@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<body>
+<canvas id="theWorld" width="1500" height="800"></canvas>
+<script type="text/javascript" src="${loki.web.modelResUrl('urn:opensource:libs:jquery:3.2.1!jquery-3.2.1.min.js')}"></script>
+<script type="text/javascript" src="${loki.web.pageUrlWithCacheCheck('urn:com:loki:js:app:pages:lokiJs')}"></script>
+<script type="text/javascript" src="${loki.web.modelResUrl('urn:com:loki:examples:app:pages:drawingPage!world.js')}"></script>
+<script>
+
+world = new World({
+    canvasId:"theWorld",
+    width:1500, height:800,
+    objects: [
+        {type: Text, text:"The Marvelous Battlefield of Pokemon by Alva and Michael Truchard - Level 1 - defeat 15 pokemon", x:100, y:0, h:800, font:"20px Arial"},
+        {type: Text, text:"arrows=move, d=dance, a=alva, e=emma, j=jump, b=battle, s=stop, x=debug", x:100, y:0, h:800, font:"20px Arial"}
+    ]
+});
+
+/*
+ * MAIN CHARACTER
+ */
+alien = new Character({
+    name:"Alien", x:500, y:50, h:0,
+    parts: [
+        {type: Img, name:"body", x: 0, y: 0, h: 0, imageUrn:"urn:com:loki:examples:app:pages:drawingPage!alien.png"},
+        {type: AnimatedThing, name: "eyes", x: 0, y: 0, h: 150,
+            parts: [
+                {type: Img, name:"openEyes", x: 0, y: 0, h: 0, imageUrn:"urn:com:loki:examples:app:pages:drawingPage!openEyes.png"},
+                {type: Img, name:"madEyes", x: 0, y: 0, h: 0, imageUrn:"urn:com:loki:examples:app:pages:drawingPage!madEyes.png"}
+            ] },
+        {type: AnimatedThing, name: "mouth", x: 0, y: 0, h: 100,
+            parts: [
+                {type: Img, name:"happyMouth", x: 0, y: 0, h: 0, imageUrn:"urn:com:loki:examples:app:pages:drawingPage!happyMouth.png"},
+                {type: Img, name:"veryHappyMouth", x: 0, y: 0, h: 0, imageUrn:"urn:com:loki:examples:app:pages:drawingPage!veryHappyMouth.png"}
+            ] }
+    ]
+});
+world.add(alien);
+pikachu = new Character( {name: "Pikachu", x:400, y:560, imageUrn:"urn:com:loki:examples:app:pages:drawingPage!pikachu.png"} );
+world.add(pikachu);
+pikachu.do(new Follow( {follower:pikachu, leader:alien, relX:-100, relY:50, randX:20, randY:20} ) );
+
+/*
+ * MOUNTAIN PLACE
+ */
+var mountainPlace = new Place( {
+    name: "The Mountain Place",
+    backgroundUrn: "urn:com:loki:examples:app:pages:drawingPage!mountainPlace.jpg",
+    bounds: new Bounds( {left:-750, right:750, bottom:0, top:800, front: -100, back: 800} ),
+    objects: [
+        {type: Thing, name:"flower", startX: 200, startY: 600, imageUrn:"urn:com:loki:examples:app:pages:drawingPage!flower.png"}
+    ]
+});
+var mountainStairs = new InvisibleBox( {name:"Mountain Stairs", left:770, top:410, right:870, bottom:450} );
+mountainPlace.add(mountainStairs);
+var forestPassage = new InvisibleBox( {name:"forestPassage", left:1490, top:425, right:1500, bottom:800} );
+mountainPlace.add(forestPassage);
+var forestSign = new Thing( {name:"forestSign", startX:1200, startY:500, imageUrn:"urn:com:loki:examples:app:pages:drawingPage!forestSign.png"} );
+mountainPlace.add(forestSign);
+mountainPlace.onEvent( function( e ) {
+    if ( e.actor === alien && e.type === "steppedOn" && e.object === mountainStairs && controlsOn ) {
+        controlsOn = false;
+        world.setBounds( new Bounds( {left:0, top:0, right:1500, bottom:800, front:0, back: 3000} ) );
+        alien.moveTo( mountainStairs );
+        alien.moveTo(940,311);
+        alien.do( new Do( {doFunction:function() {
+            world.setPlace(mountainTop);
+            alien.setPosition(500,500);
+            controlsOn = true;
+        }}) );
+    }
+    if ( e.actor === alien && e.type === "steppedOn" && e.object === forestPassage && controlsOn ) {
+        world.setPlace( forestPlace );
+        alien.setPosition(120,650);
+        controlsOn = true;
+    }
+});
+
+
+/*
+ * MOUNTAIN TOP
+ */
+var mountainTop = new Place( {
+    name: "Mountain Top",
+    backgroundUrn: "urn:com:loki:examples:app:pages:drawingPage!mountainTop.jpg",
+    bounds: new Bounds( {left:-750, right:750, bottom:0, top:800, front: -100, back: 800} )
+});
+var mountainPlacePassage = new InvisibleBox( {name:"mountainPlacePassage", left:0, top:790, right:1500, bottom:800} );
+mountainTop.add(mountainPlacePassage);
+mountainTop.onEvent( function( e ) {
+    if ( e.actor === alien && e.type === "steppedOn" && e.object === mountainPlacePassage && controlsOn ) {
+        world.setPlace( mountainPlace );
+        alien.setPosition(820,500);
+        controlsOn = true;
+    }
+});
+
+/*
+ * FOREST PLACE
+ */
+var forestPlace = new Place( {
+    name: "Forest Place",
+    backgroundUrn: "urn:com:loki:examples:app:pages:drawingPage!forestPlace.jpg",
+    bounds: new Bounds( {left:-750, right:750, bottom:0, top:800, front: -100, back: 800} )
+});
+var mountainPlacePassage2 = new InvisibleBox( {name:"mountainPlacePassage2", left:0, top:620, right:10, bottom:800} );
+forestPlace.add(mountainPlacePassage2);
+forestPlace.onEvent( function( e ) {
+    if ( e.actor === alien && e.type === "steppedOn" && e.object === mountainPlacePassage2 && controlsOn ) {
+        world.setPlace( mountainPlace );
+        alien.setPosition(1400,alien.pos.y);
+        controlsOn = true;
+    }
+});
+
+world.setPlace( mountainPlace );
+
+/*
+ * CONTROLS
+ */
+var controlsOn = true;
+world.onEvent( function(e) {
+    var key = e.key;
+    if ( !controlsOn ) return;
+    if ( e.type === "mousedown" || e.type === "touchstart" || e.type === "click" ) {
+        alien.moveTo(e.pos);
+    }
+    
+    if ( !key || !controlsOn ) return;
+    if ( key === "left" ) alien.move(-10,0);
+    if ( key === "up" ) alien.move(0,-10,);
+    if ( key === "right" ) alien.move(10,0);
+    if ( key === "down" ) alien.move(0,10);
+    if ( key === "s" ) alien.stop();
+    if ( key === "j" ) {
+        // JUMP!
+        alien.move(0,-40); // Up
+        alien.move(0,40); // Down
+    }
+    if ( key === "d" ) {
+        // Dance
+        alien.say("let us dance!");
+        alien.move(200,0); // Right
+        alien.say("oh yeah!");
+        alien.move(0,200); // Down
+        alien.say("let us dance!");
+        alien.move(-200,0); // Left
+        alien.say("oh yeah!");
+        alien.move(0,-200); // Up
+        alien.say("DANCE!");
+    }
+    if ( key === "g" ) {
+        // Dance
+        alien.say("Let's Run!");
+        alien.move(-300,0);
+        alien.move(0,200);
+        alien.say("YEAH!!");
+    }
+    if ( key === "b" ) {
+        alien.getPart("eyes").do( new Animate({frames:["madEyes", "openEyes"], ticks: 50} ) );
+        alien.getPart("mouth").do( new Animate({frames:["veryHappyMouth", "happyMouth"], ticks: 50} ) );
+        alien.sayNow("BATTLE!");
+    }
+    if ( key === "y" ) alien.sayNow("Woohoo!");
+    if ( key === "a" ) alien.sayNow("Alva");
+    if ( key === "e" ) alien.sayNow("Emma");
+    if ( key === "x" ) {
+        world.createMode = !world.createMode;
+    }
+});
+
+</script>
+
+</body>
+</html>
