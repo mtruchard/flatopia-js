@@ -269,7 +269,7 @@ class DrawingContex {
         }
         
         // Y = Yc*Hc/(Y2d + Hc + Offy) + Yc
-        var y3 = (this.cameraPosition.h * this.cameraPosition.y) / (y + this.cameraPosition.h - this.offsetY) + this.cameraPosition.y;
+        var y3 = (this.cameraPosition.h * this.cameraPosition.y) / (y + this.cameraPosition.h + this.offsetY) + this.cameraPosition.y;
         // X = (X2d - Xc)*(Y-Yc)/Yc + Xc
         var x3 = (x - this.offsetX - this.cameraPosition.x - x) * ((y3 - this.cameraPosition.y)/this.cameraPosition.y) + this.cameraPosition.x;
         
