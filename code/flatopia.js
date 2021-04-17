@@ -283,7 +283,7 @@ class DrawingContex {
 class Place {
     constructor(attributes) {
         this.name = name;
-        this.backgroundUrn = attributes.backgroundUrn;
+        this.backgroundUrl = attributes.backgroundUrl;
         this.bounds = attributes.bounds;
         this.objects = [];
         if ( attributes.objects ) {
@@ -301,8 +301,7 @@ class Place {
     }
     
     draw(ctx, containerPos) {
-        var backgroundUrl = loki.web.resourceUrl(this.backgroundUrn);
-        this.container.setBackground(backgroundUrl);
+        this.container.setBackground(this.backgroundUrl);
         if ( ctx.createMode ) {
             this.bounds.draw( ctx, containerPos );
             ctx.canvas.stroke();
