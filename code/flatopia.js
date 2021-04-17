@@ -152,7 +152,7 @@ class World {
                 this.ctx.moveTo(new Point({x:-self.canvasWidth/2, y:pos.y, h:pos.h}));
                 this.ctx.lineTo(new Point({x:self.canvasWidth/2, y:pos.y, h:pos.h}));
                 this.ctx.moveTo(new Point({x:pos.x, y:0, h:pos.h}));
-                this.ctx.lineTo(new Point({x:pox.x, y:3000, h:pos.h}));
+                this.ctx.lineTo(new Point({x:pos.x, y:3000, h:pos.h}));
                 //this.ctx.canvas.arc(pos.x, pos.y, 10, 0, Math.PI * 2, true); // circle
                 this.ctx.canvas.stroke();
             }
