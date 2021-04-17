@@ -240,10 +240,12 @@ class DrawingContex {
         //var dy = this.fd/(p2.y + this.fd); // ratio
         //return new Point2D({x: this.offsetX + (p2.x*dy), y: this.eyeLevelY - (p2.h*dy) });
         
-        // Zc/(Z-Zc) - focal ratio
-        var f = this.cameraPosition.y*-1/(p2.y - this.cameraPosition.y);
-        // X' = ((X - Xc) * (Zc/(Z-Zc))) + Xc
-        // Y' = ((Y - Yc) * (Zc/(Z-Zc))) + Yc
+        // X is right, Y is in, H is up
+        // x2d is right, y2d is down
+        // -Yc/(Y-Yc) // focal ratio, negative since Yc goes negative outside screen
+        var f = (this.cameraPosition.y/(p2.y - this.cameraPosition.y))*-1;
+        // X2d = ((X - Xc) * (Zc/(Z-Zc))) + Xc
+        // Y2d = (-(H - Hc) * (Yc/(Y-Yc))) - Hc  // H goes opposite direction from Y2d
         var x2d = this.offsetX + ((p2.x-this.cameraPosition.x) * f) + this.cameraPosition.x;
         var y2d = this.offsetY - ((p2.h-this.cameraPosition.h) * f) - this.cameraPosition.h;
         return new Point2D({x: x2d, y: y2d });
