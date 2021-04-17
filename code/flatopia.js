@@ -147,7 +147,7 @@ class World {
         var pos = this.getMousePos(e);
         if ( this._createMode ) {
             if ( pos !== null ) {
-                this.ctx.setPos(new Position({x:0,y:0,h:0}));
+                this.ctx.setPos(new Position({x:0,y:0,h:0}),new Position({x:0,y:0,h:0}));
                 this.ctx.canvas.beginPath();
                 this.ctx.moveTo(new Point({x:-self.canvasWidth/2, y:pos.y, h:pos.h}));
                 this.ctx.LineTo(new Point({x:self.canvasWidth/2, y:pos.y, h:pos.h}));
