@@ -2,6 +2,6 @@
 Flat world game engine written in Java Script
 
 # Examples
-[First Game](examples/firstGame/index.html)
+[First Game](https://mtruchard.github.io/flatopia-js/examples/firstGame/index.html) [code](examples/firstGame)
 
-[Scratchpad](examples/scratchpad/index.html)
+[Scratchpad](https://mtruchard.github.io/flatopia-js/examples/scratchpad/index.html) [code](examples/firstGame)
