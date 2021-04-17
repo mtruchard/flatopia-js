@@ -22,7 +22,7 @@ class World {
         this.canvasHeight;
         this.ctx = null;
         this.tps = ('tps' in attributes)?attributes.tps:30;  // ticks per second
-        this.eventFunction = null;
+        this.controllers = [];
         this.isReady = false;
         this.place = null;
         this._createMode = (attributes.createMode)?attributes.createMode:false;
@@ -149,12 +149,12 @@ class World {
             if ( pos !== null ) {
                 this.ctx.setPos(new Position({x:0,y:0,h:0}),new Position({x:0,y:0,h:0}));
                 this.ctx.canvas.beginPath();
-                this.ctx.moveTo(new Point({x:-1000, y:pos.y, h:pos.h}));
-                this.ctx.lineTo(new Point({x:1000, y:pos.y, h:pos.h}));
+                this.ctx.moveTo({x:-1000, y:pos.y, h:pos.h});
+                this.ctx.lineTo({x:1000, y:pos.y, h:pos.h});
                 this.ctx.canvas.stroke();
                 this.ctx.canvas.beginPath();
-                this.ctx.moveTo(new Point({x:pos.x, y:0, h:pos.h}));
-                this.ctx.lineTo(new Point({x:pos.x, y:3000, h:pos.h}));
+                this.ctx.moveTo({x:pos.x, y:0, h:pos.h});
+                this.ctx.lineTo({x:pos.x, y:3000, h:pos.h});
                 //this.ctx.canvas.arc(pos.x, pos.y, 10, 0, Math.PI * 2, true); // circle
                 this.ctx.canvas.stroke();
             }
@@ -168,17 +168,19 @@ class World {
             pos: pos
         });
     }
-    onEvent( eventFunction ) {
-        this.eventFunction = eventFunction;
+    addController( controller ) {
+        this.controllers.push(controller);
+        controller.world = this;
     }
     fireEvent( event ) {
         event.world = this;
         event.place = this.place;
-        if ( this.eventFunction ) {
-            this.eventFunction( event );
+        for ( const controller of this.controllers ) {
+            let handled = controller.onEvent( event );
+            if (handled) break;
         }
-        if ( this.place.eventFunction ) {
-            this.place.eventFunction( event );
+        if ( this.place.onEvent ) {
+            this.place.onEvent( event );
         }
     }
     
@@ -284,11 +286,13 @@ class DrawingContex {
         this.pos = containerPos.translate(pos);
     }
     
-    moveTo(p) {
+    moveTo(attributes) {
+        var p = new Position(attributes);
         var xy = this.t2xy(p);
         this.canvas.lineTo(xy.x, xy.y);
     }
-    lineTo(p) {
+    lineTo(attributes) {
+        var p = new Position(attributes);
         var xy = this.t2xy(p);
         this.canvas.lineTo(xy.x, xy.y);
     }
@@ -370,16 +374,11 @@ class Thing {
             ctx.setPos(containerPos,this.pos);
             ctx.canvas.beginPath();
             var p,xy;
-            p = new Point({x:-5,y:-5,h:0});
-            ctx.moveTo(p);
-            p = new Point({x:5,y:-5,h:0});
-            ctx.lineTo(p);
-            p = new Point({x:5,y:5,h:0});
-            ctx.lineTo(p);
-            p = new Point({x:-5,y:5,h:0});
-            ctx.lineTo(p);
-            p = new Point({x:-5,y:-5,h:0});
-            ctx.lineTo(p);
+            ctx.moveTo({x:-5,y:-5,h:0});
+            ctx.lineTo({x:5,y:-5,h:0});
+            ctx.lineTo({x:5,y:5,h:0});
+            ctx.lineTo({x:-5,y:5,h:0});
+            ctx.lineTo({x:-5,y:-5,h:0});
             ctx.canvas.stroke();
         }
     }
@@ -443,29 +442,19 @@ class Thing {
         }
     }
     
-    move( dx, dy, dh ) {
-        if ( typeof dy === 'undefined' ) {
-            // dx is a position or point
-            dy = dx.y;
-            dh = dx.h;
-            dx = dx.x;
+    moveBy( attributes ) {
+        var p = new Position(attributes);
+        if ( typeof p.h === 'undefined' ) {
+            p.h = this.pos.h;
         }
-        if ( typeof h === 'undefined' ) {
-            dh = this.pos.dh;
-        }
-        this.actions.push( new MoveBy( {character:this, dx:dx, dy:dy, dh:dh} ) );
+        this.actions.push( new MoveBy( {character:this, pos:p} ) );
     }
-    moveTo( x, y, h ) {
-        if ( typeof y === 'undefined' ) {
-            // x is a position or point
-            y = x.y;
-            h = x.h;
-            x = x.x;
+    moveTo( attributes ) {
+        var p = new Position(attributes);
+        if ( typeof p.h === 'undefined' ) {
+            p.h = this.pos.h;
         }
-        if ( typeof h === 'undefined' ) {
-            h = this.pos.h;
-        }
-        this.actions.push( new MoveTo( {character:this, x:x, y:y, h:h} ) );
+        this.actions.push( new MoveTo( {character:this, pos:p} ) );
     }
     stop() {
         this.actions = [];
@@ -476,11 +465,16 @@ class Thing {
         return this.pos;
     }
     /* Set the position of the feet in container coordinates */
-    setPosition( x, y, h ) {
-        if ( typeof y === 'undefined' ) {
-            y = x.y;
-            h = x.h;
-            x = x.x;
+    setPosition( attributes ) {
+        var x, y, h;
+        if ( typeof attributes.pos === 'undefined' ) {
+            x = attributes.x;
+            y = attributes.y;
+            h = attributes.h;
+        } else {
+            dx = attributes.dx;
+            dy = attributes.dy;
+            dh = attributes.dh;
         }
         this.pos = new Position( {x:x, y:y, h:h} );
         
@@ -573,7 +567,7 @@ class CompositeThing extends Thing {
     
     getBounds() {
         if ( this.parts.length === 0 ) {
-            return new Rect({left:0, top:0, right:0, bottom:0});
+            return new Bounds({left:0, top:0, right:0, bottom:0, front:0, back:0});
         } else {
             return this.parts[0].getBounds();
         }
@@ -615,13 +609,15 @@ class CompositeThing extends Thing {
 class Character extends CompositeThing {
     constructor(attributes) {
         super(attributes);
-        this.imageUrn = attributes.imageUrn;
-        if ( this.imageUrn ) {
-            this.addPart( new Img( {name: "main", imageUrn:this.imageUrn, topLeft:new Point({x:0,y:0,h:0})} ) );
+        this.imageUrl = attributes.imageUrl;
+        if ( this.imageUrl ) {
+            this.addPart( new Img( {name: "main", imageUrl:this.imageUrl, topLeft:new Point({x:0,y:0,h:0})} ) );
         }
-        this.wordBubble = new WordBubble( {name: "wordBubble", imageUrn:'urn:com:loki:examples:app:pages:drawingPage!word_bubble.png', pos:new Position({x:0,y:0,h:0})} );
-        this.wordBubble.hide();
-        this.addPart( this.wordBubble );
+        if (attributes.wordBubble) {
+            this.wordBubble = new WordBubble(attributes.wordBubble);
+            this.addPart(this.wordBubble);
+            this.wordBubble.hide();
+        }
         this.bubbleWords = null;
     }
     
@@ -642,7 +638,7 @@ class Character extends CompositeThing {
 class WordBubble extends Thing {
     constructor(attributes) {
         super(attributes);
-        this.image = new Img( {imageUrn: attributes.imageUrn, pos:new Position({x:0,y:0,h:100})} );
+        this.image = new Img( {imageUrl: attributes.imageUrl, x:0,y:0,h:100} );
         
         this.words = null;
         this.wordBubbleSeconds = 1;
@@ -654,7 +650,7 @@ class WordBubble extends Thing {
         this.image.draw( ctx, this.pos.translate(containerPos) );
         ctx.setPos(containerPos,this.pos);
         ctx.canvas.font = "20px Arial";
-        var p = new Point({x:165,y:0,h:80});
+        var p = new Point({x:-30,y:0,h:20});
         var xy = ctx.t2xy(p);
         ctx.canvas.fillText(this.words, xy.x, xy.y );
     }
@@ -810,7 +806,7 @@ class Shape extends Thing {
 class Img extends Thing {
     constructor(attributes) {
         super(attributes);
-        var imageUrn = attributes.imageUrn;
+        var imageUrl = attributes.imageUrl;
         
         this.ready = false;
         this.image = new Image();
@@ -818,7 +814,7 @@ class Img extends Thing {
         this.image.onload = function() {
             self._resourceLoaded();
         };
-        this.image.src = loki.web.resourceUrl(imageUrn);
+        this.image.src = imageUrl;
     }
     _resourceLoaded() {
         this.ready = true;
@@ -987,9 +983,23 @@ class Point {
  */
 class Position {
     constructor(attributes) {
-        this.x = attributes.x;
-        this.y = attributes.y;
-        this.h = attributes.h;
+        if (typeof attributes === 'Position') {
+            this.x = attributes.x;
+            this.y = attributes.y;
+            this.h = attributes.h;
+        } else if (typeof attributes.pos === 'Point') {
+            this.x = attributes.x;
+            this.y = attributes.y;
+            this.h = attributes.h;
+        } else if (typeof attributes.pos !== 'undefined') {
+            this.x = attributes.pos.x;
+            this.y = attributes.pos.y;
+            this.h = attributes.pos.h;
+        } else {
+            this.x = attributes.x;
+            this.y = attributes.y;
+            this.h = attributes.h;
+        }
     }
     /* Translate the position using the given position */
     translate(p) {
@@ -1077,48 +1087,32 @@ class Bounds {
         ctx.setPos( containerPos, new Point( {x:0, y:0, h:0} ) );
         
         ctx.canvas.beginPath();
-        var p = new Point( {x:this._left, y:this._front, h:this._bottom} );
-        ctx.moveTo(p);
-        p = new Point( {x:this._right, y:this._front, h:this._bottom} );
-        ctx.lineTo(p);
-        p = new Point( {x:this._right, y:this._back, h:this._bottom} );
-        ctx.lineTo(p);
-        p = new Point( {x:this._left, y:this._back, h:this._bottom} );
-        ctx.lineTo(p);
-        p = new Point( {x:this._left, y:this._front, h:this._bottom} );
-        ctx.lineTo(p);
+        ctx.moveTo({x:this._left, y:this._front, h:this._bottom});
+        ctx.lineTo({x:this._right, y:this._front, h:this._bottom});
+        ctx.lineTo({x:this._right, y:this._back, h:this._bottom});
+        ctx.lineTo({x:this._left, y:this._back, h:this._bottom});
+        ctx.lineTo({x:this._left, y:this._front, h:this._bottom});
         
-        p = new Point( {x:this._left, y:this._front, h:this._top} );
-        ctx.lineTo(p);
-        p = new Point( {x:this._right, y:this._front, h:this._top} );
-        ctx.lineTo(p);
-        p = new Point( {x:this._right, y:this._back, h:this._top} );
-        ctx.lineTo(p);
-        p = new Point( {x:this._left, y:this._back, h:this._top} );
-        ctx.lineTo(p);
-        p = new Point( {x:this._left, y:this._front, h:this._top} );
-        ctx.lineTo(p);
+        ctx.lineTo({x:this._left, y:this._front, h:this._top});
+        ctx.lineTo({x:this._right, y:this._front, h:this._top});
+        ctx.lineTo({x:this._right, y:this._back, h:this._top});
+        ctx.lineTo({x:this._left, y:this._back, h:this._top});
+        ctx.lineTo({x:this._left, y:this._front, h:this._top});
         ctx.canvas.stroke();
         
         ctx.canvas.beginPath();
-        p = new Point( {x:this._right, y:this._front, h:this._bottom} );
-        ctx.moveTo(p);
-        p = new Point( {x:this._right, y:this._front, h:this._top} );
-        ctx.lineTo(p);
+        ctx.moveTo({x:this._right, y:this._front, h:this._bottom});
+        ctx.lineTo({x:this._right, y:this._front, h:this._top});
         ctx.canvas.stroke();
         
         ctx.canvas.beginPath();
-        p = new Point( {x:this._right, y:this._back, h:this._bottom} );
-        ctx.moveTo(p);
-        p = new Point( {x:this._right, y:this._back, h:this._top} );
-        ctx.lineTo(p);
+        ctx.moveTo({x:this._right, y:this._back, h:this._bottom});
+        ctx.lineTo({x:this._right, y:this._back, h:this._top});
         ctx.canvas.stroke();
         
         ctx.canvas.beginPath();
-        p = new Point( {x:this._left, y:this._back, h:this._bottom} );
-        ctx.moveTo(p);
-        p = new Point( {x:this._left, y:this._back, h:this._top} );
-        ctx.lineTo(p);
+        ctx.moveTo({x:this._left, y:this._back, h:this._bottom});
+        ctx.lineTo({x:this._left, y:this._back, h:this._top});
         ctx.canvas.stroke();
         
         ctx.canvas.strokeStyle = oldStrokeStyle;
@@ -1154,20 +1148,11 @@ class MoveTo extends Action {
         super(attributes);
         this.character = attributes.character;
         if ( attributes.target ) {
-            if ( attributes.target instanceof Position ) {
-                this.targetY = attributes.target.y;
-                this.targetX = attributes.target.x;
-                this.targetH = attributes.target.h;
-            } else {
-                var center = attributes.target.getBounds().center();
-                this.targetX = center.x;
-                this.targetY = center.y;
-                this.targetH = center.h;
-            }
+            this.target = new Position(attributes.target);
+        } else if ( attributes.pos ) {
+            this.target = new Position(attributes.pos);
         } else {
-            this.targetX = attributes.x;
-            this.targetY = attributes.y;
-            this.targetH = attributes.h;
+            this.target = new Position(attributes);
         }
         this.moveRate = 10;
     }
@@ -1175,33 +1160,33 @@ class MoveTo extends Action {
         var x = this.character.getPosition().x;
         var y = this.character.getPosition().y;
         var h = this.character.getPosition().h;
-        if ( x > this.targetX ) {
+        if ( x > this.target.x ) {
             x = x - this.moveRate;
-            if ( x < this.targetX ) x = this.targetX;
+            if ( x < this.target.x ) x = this.target.x;
         }
-        if ( x < this.targetX ) {
+        if ( x < this.target.x ) {
             x = x + this.moveRate;
-            if ( x > this.targetX ) x = this.targetX;
+            if ( x > this.target.x ) x = this.target.x;
         }
-        if ( y > this.targetY ) {
+        if ( y > this.target.y ) {
             y = y - this.moveRate;
-            if ( y < this.targetY ) y = this.targetY;
+            if ( y < this.target.y ) y = this.target.y;
         }
-        if ( y < this.targetY ) {
+        if ( y < this.target.y ) {
             y = y + this.moveRate; 
-            if ( y > this.targetY ) y = this.targetY;
+            if ( y > this.target.y ) y = this.target.y;
         }
-        if ( h > this.targetH ) {
+        if ( h > this.target.h ) {
             h = h - this.moveRate;
-            if ( h < this.targetH ) h = this.targetH;
+            if ( h < this.target.h ) h = this.target.h;
         }
-        if ( h < this.targetH ) {
+        if ( h < this.target.h ) {
             h = h + this.moveRate; 
-            if ( h > this.targetH ) h = this.targetH;
+            if ( h > this.target.h ) h = this.target.h;
         }
-        var delta = this.character.setPosition(x,y,h);
+        var delta = this.character.setPosition({x:x,y:y,h:h});
         if ( delta.x !== 0 || delta.y !== 0 || delta.h !== 0 ) return true; // movement done if we hit bounds 
-        return ( y === this.targetY ) && (x === this.targetX ) && (h === this.targetH );  // true if movement done
+        return ( y === this.target.y ) && (x === this.target.x ) && (h === this.target.h );  // true if movement done
     }
 }
 
@@ -1209,52 +1194,54 @@ class MoveBy extends Action {
     constructor(attributes) {
         super(attributes);
         this.character = attributes.character;
-        this.dx = attributes.dx;
-        this.dy = attributes.dy;
-        this.dh = attributes.dh;
+        if ( attributes.pos ) {
+            this.delta = new Position(attributes.pos);
+        } else {
+            this.delta = new Position(attributes);
+        }
         
-        this.targetX = null;
-        this.targetY = null;
-        this.targetH = null;
+        this.target = null;
         this.moveRate = 10;
     }
     do() {
         var x = this.character.getPosition().x;
         var y = this.character.getPosition().y;
         var h = this.character.getPosition().h;
-        if ( !this.targetX ) {
+        if ( !this.target ) {
             // Set target on first move
-            this.targetX = x + this.dx;
-            this.targetY = y + this.dy;
-            this.targetH = h + this.dh;
+            this.target = new Position({
+                x: x + this.delta.x,
+                y: y + this.delta.y,
+                h: h + this.delta.h
+            });
         }
-        if ( x > this.targetX ) {
+        if ( x > this.target.x ) {
             x = x - this.moveRate;
-            if ( x < this.targetX ) x = this.targetX;
+            if ( x < this.target.x ) x = this.target.x;
         }
-        if ( x < this.targetX ) {
+        if ( x < this.target.x ) {
             x = x + this.moveRate;
-            if ( x > this.targetX ) x = this.targetX;
+            if ( x > this.target.x ) x = this.target.x;
         }
-        if ( y > this.targetY ) {
+        if ( y > this.target.y ) {
             y = y - this.moveRate;
-            if ( y < this.targetY ) y = this.targetY;
+            if ( y < this.target.y ) y = this.target.y;
         }
-        if ( y < this.targetY ) {
+        if ( y < this.target.y ) {
             y = y + this.moveRate; 
-            if ( y > this.targetY ) y = this.targetY;
+            if ( y > this.target.y ) y = this.target.y;
         }
-        if ( h > this.targetH ) {
+        if ( h > this.target.h ) {
             h = h - this.moveRate;
-            if ( h < this.targetH ) h = this.targetH;
+            if ( h < this.target.h ) h = this.target.h;
         }
-        if ( h < this.targetH ) {
+        if ( h < this.target.h ) {
             h = h + this.moveRate; 
-            if ( h > this.targetH ) y = this.targetH;
+            if ( h > this.target.h ) y = this.target.h;
         }
-        var delta = this.character.setPosition(x,y,h);
+        var delta = this.character.setPosition({x:x,y:y,h:h});
         if ( delta.x !== 0 || delta.y !== 0 || delta.h !== 0 ) return true; // movement done if we hit bounds 
-        return ( y === this.targetY ) && (x === this.targetX ) && (h === this.targetH );  // true if movement done
+        return ( x === this.target.x ) && (y === this.target.y ) && (h === this.target.h );  // true if movement done
     }
 }
 
@@ -1270,44 +1257,44 @@ class Follow extends Action {
         this.randY = attributes.randY?attributes.randY:0;
         this.randH = attributes.randH?attributes.randH:0;
         
-        this.targetX = null;
-        this.targetY = null;
-        this.targetH = null;
+        this.target = null;
         this.moveRate = 10;
     }
     do() {
         var to = this.followedCharacter.getPosition();
-        this.targetX = to.x+this.relX+ ((Math.random()*0.5) * this.randX);
-        this.targetY = to.y+this.relY+ ((Math.random()*0.5) * this.randY);
-        this.targetH = to.h+this.relH+ ((Math.random()*0.5) * this.randH);
+        this.target = new Position({
+            x: to.x+this.relX+ ((Math.random()*0.5) * this.randX),
+            y: to.y+this.relY+ ((Math.random()*0.5) * this.randY),
+            h: to.h+this.relH+ ((Math.random()*0.5) * this.randH)
+        });
         var x = this.character.getPosition().x;
         var y = this.character.getPosition().y;
         var h = this.character.getPosition().h;
-        if ( x > this.targetX + this.randX ) {
+        if ( x > this.target.x + this.randX ) {
             x = x - this.moveRate;
-            if ( x < this.targetX ) x = this.targetX;
+            if ( x < this.target.x ) x = this.target.x;
         }
-        if ( x < this.targetX - this.randX ) {
+        if ( x < this.target.x - this.randX ) {
             x = x + this.moveRate;
-            if ( x > this.targetX ) x = this.targetX;
+            if ( x > this.target.x ) x = this.target.x;
         }
-        if ( y > this.targetY + this.randY ) {
+        if ( y > this.target.y + this.randY ) {
             y = y - this.moveRate;
-            if ( y < this.targetY ) y = this.targetY;
+            if ( y < this.target.y ) y = this.target.y;
         }
-        if ( y < this.targetY - this.randY ) {
+        if ( y < this.target.y - this.randY ) {
             y = y + this.moveRate; 
-            if ( y > this.targetY ) y = this.targetY;
+            if ( y > this.target.y ) y = this.target.y;
         }
-        if ( h > this.targetH + this.randH ) {
+        if ( h > this.target.h + this.randH ) {
             h = h - this.moveRate;
-            if ( h < this.targetH ) h = this.targetH;
+            if ( h < this.target.h ) h = this.target.h;
         }
-        if ( h < this.targetH - this.randH ) {
+        if ( h < this.target.h - this.randH ) {
             h = h + this.moveRate; 
-            if ( h > this.targetH ) y = this.targetH;
+            if ( h > this.target.h ) y = this.target.h;
         }
-        this.character.setPosition(x,y,h);
+        this.character.setPosition({x:x,y:y,h:h});
         return false;
     }
 }
@@ -1370,6 +1357,62 @@ class Animate extends Action {
             return true;
         }
         return true;
+    }
+}
+
+class CharacterController {
+    constructor(attributes) {
+        this.character = attributes.character;
+        this.customOnEvent = attributes.onEvent;
+        this.jumpHeight = attributes.jumpHeight?attributes.jumpHeight:0;
+        this.moveDistance = attributes.moveDistance?attributes.moveDistance:10;
+        this.world = null; // set later
+    }
+
+    onEvent( e ) {
+        let done = false;
+        var key = e.key;
+        if ( e.type === "mousedown" || e.type === "touchstart" || e.type === "click" ) {
+            this.character.moveTo(e.pos);
+            done = true;
+        }
+        
+        if ( key === "left" ) {
+            this.character.moveBy({x:-this.moveDistance,y:0,h:0});
+            done = true;
+        }
+        if ( key === "up" ) {
+            this.character.moveBy({x:0,y:this.moveDistance,h:0});
+            done = true;
+        }
+        if ( key === "right" ) {
+            this.character.moveBy({x:this.moveDistance,y:0,h:0});
+            done = true;
+        }
+        if ( key === "down" ) {
+            this.character.moveBy({x:0,y:-this.moveDistance,h:0});
+            done = true;
+        }
+        if ( key === "s" ) {
+            this.character.stop();
+            done = true;
+        }
+        if ( key === "j" ) {
+            // JUMP!
+            if ( this.jumpHeight ) {
+                this.character.moveBy({x:0,y:0,h:this.jumpHeight}); // Up
+                this.character.moveBy({x:0,y:0,h:-this.jumpHeight}); // Down
+            }
+            done = true;
+        }
+        if ( key === "x" ) {
+            this.world.toggleCreateMode();
+            done = true;
+        }
+        if ( !done ) {
+            done = this.customOnEvent(e);
+        }
+        return done;
     }
 }
 
