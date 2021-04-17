@@ -268,9 +268,13 @@ class DrawingContex {
             return null;
         }
         
-    //  var y3 = (this.cameraPosition.h * this.cameraPosition.y) / (this.cameraPosition.h + this.offsetY - y) + this.cameraPosition.y;
-        var y3 = (this.cameraPosition.h * this.cameraPosition.y) / (this.cameraPosition.h + this.offsetY - y) - this.cameraPosition.y;
-        var x3 = (this.offsetX + this.cameraPosition.x - x) / (this.cameraPosition.y/(y3 - this.cameraPosition.y)) + this.cameraPosition.x;
+        // Y = Yc*Hc/(Y2d + Hc + Offy) + Yc
+        var y3 = (this.cameraPosition.h * this.cameraPosition.y) / (y + this.cameraPosition.h - this.offsetY) + this.cameraPosition.y;
+        // X = (X2d - Xc)*(Y-Yc)/Yc + Xc
+        var x3 = (x - this.offsetX - this.cameraPosition.x - x) * ((y3 - this.cameraPosition.y)/this.cameraPosition.y) + this.cameraPosition.x;
+        
+        //var y3 = (this.cameraPosition.h * this.cameraPosition.y) / (this.cameraPosition.h + this.offsetY - y) - this.cameraPosition.y;
+        //var x3 = (this.offsetX + this.cameraPosition.x - x) / (this.cameraPosition.y/(y3 - this.cameraPosition.y)) + this.cameraPosition.x;
         
         // TODO need to translate to handle position other than 0,0,0
         return new Point({x: x3, y: y3, h: 0});
