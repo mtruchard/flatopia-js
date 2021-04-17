@@ -2,9 +2,7 @@
 <html>
 <body>
 <canvas id="theWorld" width="1500" height="800"></canvas>
-<script type="text/javascript" src="${loki.web.modelResUrl('urn:opensource:libs:jquery:3.2.1!jquery-3.2.1.min.js')}"></script>
-<script type="text/javascript" src="${loki.web.pageUrlWithCacheCheck('urn:com:loki:js:app:pages:lokiJs')}"></script>
-<script type="text/javascript" src="${loki.web.modelResUrl('urn:com:loki:examples:app:pages:drawingPage!world.js')}"></script>
+<script type="text/javascript" src="../../code/flatopia.js"></script>
 <script>
 
 world = new World({
@@ -45,7 +43,7 @@ pikachu.do(new Follow( {follower:pikachu, leader:alien, relX:-100, relY:50, rand
  */
 var mountainPlace = new Place( {
     name: "The Mountain Place",
-    backgroundUrn: "urn:com:loki:examples:app:pages:drawingPage!mountainPlace.jpg",
+    backgroundUrl: "mountainPlace.jpg",
     bounds: new Bounds( {left:-750, right:750, bottom:0, top:800, front: -100, back: 800} ),
     objects: [
         {type: Thing, name:"flower", startX: 200, startY: 600, imageUrn:"urn:com:loki:examples:app:pages:drawingPage!flower.png"}
@@ -82,7 +80,7 @@ mountainPlace.onEvent( function( e ) {
  */
 var mountainTop = new Place( {
     name: "Mountain Top",
-    backgroundUrn: "urn:com:loki:examples:app:pages:drawingPage!mountainTop.jpg",
+    backgroundUrl: "mountainTop.jpg",
     bounds: new Bounds( {left:-750, right:750, bottom:0, top:800, front: -100, back: 800} )
 });
 var mountainPlacePassage = new InvisibleBox( {name:"mountainPlacePassage", left:0, top:790, right:1500, bottom:800} );
@@ -100,7 +98,7 @@ mountainTop.onEvent( function( e ) {
  */
 var forestPlace = new Place( {
     name: "Forest Place",
-    backgroundUrn: "urn:com:loki:examples:app:pages:drawingPage!forestPlace.jpg",
+    backgroundUrl: "forestPlace.jpg",
     bounds: new Bounds( {left:-750, right:750, bottom:0, top:800, front: -100, back: 800} )
 });
 var mountainPlacePassage2 = new InvisibleBox( {name:"mountainPlacePassage2", left:0, top:620, right:10, bottom:800} );
