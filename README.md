@@ -13,7 +13,7 @@ The engine is written in object oriented Java Script and is in the single file [
 [Scratchpad](https://mtruchard.github.io/flatopia-js/examples/scratchpad/index.html) [(code)](examples/scratchpad)
 
 # World Geometry
-All locations and interaction are described using 3D coordinate positions in JSON such as {x:0,y:100,h:50}.
+All locations and movement are described using 3D coordinate positions in JSON such as {x:0,y:100,h:50}.
 The 'x' coordinate goes horizontally across the screen with its origin (x=0) at the center. 'x' gets larger going to the right.
 The 'y' coordinate goes into the screen with its origin (y=0) at the front. 'y' gets larger going into the screen.
 The 'h' coordinate goes up and down with its origin at the bottom (h=0). 'h' gets larger going up.
