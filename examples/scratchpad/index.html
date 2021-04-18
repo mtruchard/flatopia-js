@@ -45,14 +45,6 @@ shape.lineTo({x:20-45,y:0,h:90});
 /*
  * CONTROLS
  */
-var controlsOn = true;
-world.onEvent( function(e) {
-    var key = e.key;
-    if ( !key || !controlsOn ) return;
-    
-    if ( key === "x" ) {
-        world.toggleCreateMode();
-    }
-});
+ world.addController( new DebugController() );
 
 </script>

@@ -32,7 +32,7 @@ alien = new Character({
                 {type: Img, name:"veryHappyMouth", x: 0, y: 0, h: 0, imageUrl:"veryHappyMouth.png"}
             ] },
     ],
-    wordBubble: {imageUrl:"word_bubble.png", x:165,y:0,h:80}
+    wordBubble: {imageUrl:"word_bubble.png", x:155,y:0,h:120}
 });
 world.add(alien);
 pikachu = new Character( {name: "Pikachu", x:400, y:560, imageUrl:"pikachu.png"} );
@@ -117,6 +117,7 @@ world.setPlace( mountainPlace );
 /*
  * CONTROLS
  */
+world.addController( new DebugController() );
 world.addController( new CharacterController({ character: alien, onEvent:function(e) {
     var key = e.key;
     let alien = e.character;

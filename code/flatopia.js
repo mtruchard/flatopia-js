@@ -23,6 +23,9 @@ class World {
         this.ctx = null;
         this.tps = ('tps' in attributes)?attributes.tps:30;  // ticks per second
         this.controllers = [];
+        if (attributes.controller) {
+            this.addController(attributes.controller);
+        }
         this.isReady = false;
         this.place = null;
         this._createMode = (attributes.createMode)?attributes.createMode:false;
@@ -90,8 +93,11 @@ class World {
     }; */
     
     setBackground(backgroundUrl) {
-        //this.$canvas.css('background-image', 'url("' + backgroundUrl + '")');
-        this.canvas.style.backgroundImage = 'url("' + backgroundUrl + '")';
+        if (backgroundUrl) {
+            this.canvas.style.backgroundImage = 'url("' + backgroundUrl + '")';
+        } else {
+            this.canvas.style.backgroundImage = '';
+        }
     }
     
     /*
@@ -207,7 +213,7 @@ class World {
         this.ctx.createMode = createMode;
     }
     toggleCreateMode() {
-        this._createMode = !_createMode;
+        this._createMode = !this._createMode;
         this.ctx.createMode = this._createMode;
     }
 }
@@ -370,16 +376,18 @@ class Thing {
     draw(ctx, containerPos) {
         if ( !this.isShown ) return;
         if ( ctx.createMode ) {
+            let pos = containerPos.translate(this.pos);
+            this.getFeetRect().draw(ctx,pos);
+            this.getBounds().draw(ctx,pos);
             // Draw 3x3 square at feet at height 0
-            ctx.setPos(containerPos,this.pos);
-            ctx.canvas.beginPath();
-            var p,xy;
-            ctx.moveTo({x:-5,y:-5,h:0});
-            ctx.lineTo({x:5,y:-5,h:0});
-            ctx.lineTo({x:5,y:5,h:0});
-            ctx.lineTo({x:-5,y:5,h:0});
-            ctx.lineTo({x:-5,y:-5,h:0});
-            ctx.canvas.stroke();
+            //ctx.setPos(containerPos,this.pos);
+            //ctx.canvas.beginPath();
+            //ctx.moveTo({x:-5,y:-5,h:0});
+            //ctx.lineTo({x:5,y:-5,h:0});
+            //ctx.lineTo({x:5,y:5,h:0});
+            //ctx.lineTo({x:-5,y:5,h:0});
+            //ctx.lineTo({x:-5,y:-5,h:0});
+            //ctx.canvas.stroke();
         }
     }
     
@@ -466,28 +474,18 @@ class Thing {
     }
     /* Set the position of the feet in container coordinates */
     setPosition( attributes ) {
-        var x, y, h;
-        if ( typeof attributes.pos === 'undefined' ) {
-            x = attributes.x;
-            y = attributes.y;
-            h = attributes.h;
-        } else {
-            dx = attributes.dx;
-            dy = attributes.dy;
-            dh = attributes.dh;
-        }
-        this.pos = new Position( {x:x, y:y, h:h} );
+        this.pos = new Position( attributes );
         
         // keep feet inside bounds of container
         //var bounds = this.getBounds();
         //var width = bounds.width();
         //var height = bounds.height();
         // this.topLeft = new Point( {x:this.pos.x - width*0.5, y:this.pos.y - height*0.8} );
-        var feetRect = this.getFeetRect();
-        var adjFeetRect = feetRect.translate(this.pos);
-        var delta = this.container.getBounds().keepInside( adjFeetRect );
+        var bounds = this.getBounds();
+        var adjBounds = bounds.translate(this.pos);
+        var delta = this.container.getBounds().keepInside( adjBounds );
         if ( delta.x !== 0 || delta.y !== 0 || delta.h !== 0) {
-            this.pos = new Position( {x:x+delta.x, y:y+delta.y, h:h+delta.h} );
+            this.pos = new Position( {x:this.pos.x+delta.x, y:this.pos.y+delta.y, h:this.pos.h+delta.h} );
         }
         
         return delta;
@@ -638,7 +636,7 @@ class Character extends CompositeThing {
 class WordBubble extends Thing {
     constructor(attributes) {
         super(attributes);
-        this.image = new Img( {imageUrl: attributes.imageUrl, x:0,y:0,h:100} );
+        this.image = new Img( {imageUrl: attributes.imageUrl, x:0,y:0,h:0} );
         
         this.words = null;
         this.wordBubbleSeconds = 1;
@@ -650,7 +648,7 @@ class WordBubble extends Thing {
         this.image.draw( ctx, this.pos.translate(containerPos) );
         ctx.setPos(containerPos,this.pos);
         ctx.canvas.font = "20px Arial";
-        var p = new Point({x:-30,y:0,h:20});
+        var p = new Position({x:-30,y:0,h:60});
         var xy = ctx.t2xy(p);
         ctx.canvas.fillText(this.words, xy.x, xy.y );
     }
@@ -1036,7 +1034,7 @@ class Bounds {
         }*/
     }
     get left() { return this._left; }
-    get right() { return this._left; }
+    get right() { return this._right; }
     get front() { return this._front; }
     get back() { return this._back; }
     get top() { return this._top; }
@@ -1360,6 +1358,20 @@ class Animate extends Action {
     }
 }
 
+class CustomController {
+    constructor(attributes) {
+        this.customOnEvent = attributes.onEvent;
+        this.world = null; // set later
+    }
+    onEvent( e ) {
+        let done = false;
+        if ( this.customOnEvent ) {
+            done = this.customOnEvent(e);
+        }
+        return done;
+    }
+}
+
 class CharacterController {
     constructor(attributes) {
         this.character = attributes.character;
@@ -1405,17 +1417,35 @@ class CharacterController {
             }
             done = true;
         }
-        if ( key === "x" ) {
-            this.world.toggleCreateMode();
-            done = true;
-        }
-        if ( !done ) {
+        if ( !done && this.customOnEvent ) {
+            e.character = this.character;
             done = this.customOnEvent(e);
         }
         return done;
     }
 }
 
+class DebugController {
+    constructor(attributes) {
+        if (attributes) {
+            this.customOnEvent = attributes.onEvent;
+        }
+        this.world = null; // set later
+    }
+
+    onEvent( e ) {
+        let done = false;
+        var key = e.key;
+        if ( key === "x" ) {
+            this.world.toggleCreateMode();
+            done = true;
+        }
+        if ( !done && this.customOnEvent ) {
+            done = this.customOnEvent(e);
+        }
+        return done;
+    }
+}
 
 function create( attributes ) {
     //var newProps = {};
