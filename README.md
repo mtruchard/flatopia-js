@@ -8,7 +8,7 @@ The engine is written in object oriented Java Script and is in the single file [
 # Examples
 [First Game](https://mtruchard.github.io/flatopia-js/examples/firstGame/index.html) [(code)](examples/firstGame)
 
-[Second Game](https://mtruchard.github.io/flatopia-js/examples/secondGame/index.html) [(code)](examples/secondGame)
+[Second Game](https://mtruchard.github.io/flatopia-js/games/secondGame/index.html) [(code)](games/secondGame)
 
 [Scratchpad](https://mtruchard.github.io/flatopia-js/examples/scratchpad/index.html) [(code)](examples/scratchpad)
 
