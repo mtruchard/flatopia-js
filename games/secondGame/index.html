@@ -1,24 +1,47 @@
 <!DOCTYPE html>
 <html>
-<body>
-<canvas id="theWorld" width="1000" height="800"></canvas>
-<script type="text/javascript" src="../../code/flatopia.js"></script>
+    <head>
+        <link rel="stylesheet" type="text/css" href="../../starter/styles/style1.css" />
+    </head>
+    <body>
+        <div id="page">
+            <canvas id="canvas" width="1000", height="500"></canvas>
+            <div id="console"></div>
+        </div>
+<script type="text/javascript" src="../../engine/flatopia.js"></script>
+<script type="text/javascript" src="../../starter/characters/flower/flower.js"></script>
 <script>
 
 world = new World({
-    canvasId:"theWorld",
+    canvasId:"canvas",
+    consoleId:"console",
     width:1000, height:800,
 });
 
-flower = new Character({
-    name:"Flower", x:0, y:0, h:0,
-    imageUrl: "flower.png"
+console.log("Hello World!");
+x = 3;
+console.log(x);
+y = x + 2;
+console.log(y);
+
+
+bird = new Character({
+    name:"Birdy", x:200, y:0, h:150,
+    imageUrl:"bird.png"
 });
+world.add(bird);
+doll = new Character({
+    name:"Paper Doll", x:-200, y:100, h:0,
+    imageUrl:"paper_doll.png"
+});
+world.add(doll);
+
+flower = new Flower({x:0, y:0, h:0});
 world.add(flower);
 
 world.addController( new DebugController() );
 world.addController( new CharacterController({
-    character:flower,
+    character:bird,
     onEvent: function(e){}
 }));
 

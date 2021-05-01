@@ -1,0 +1,23 @@
+#page {
+    width: 1000px;
+    height: 665px;
+    margin: 2px;
+    border: 1px solid #f5eea2;
+}
+
+#canvas {
+    width:1000px;
+    height:500px;
+    background-size: cover;
+}
+
+#console {
+    background-color: black;
+    color: white;
+    border-top: 1px solid #f5eea2;
+    font-family: "SF Mono","Monaco","Andale Mono","Lucida Console","Bitstream Vera Sans Mono","Courier New",Courier,monospace;
+    white-space: pre;
+    overflow: auto;
+    height: 150px;
+    padding: 5px;
+}

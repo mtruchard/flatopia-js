@@ -29,6 +29,10 @@ class World {
         this.isReady = false;
         this.place = null;
         this._createMode = (attributes.createMode)?attributes.createMode:false;
+
+        if ( attributes.consoleId ) {
+            captureConsole(attributes.consoleId);
+        }
         
         var self = this;
         window.onload = function() {
@@ -43,7 +47,7 @@ class World {
             var cameraPosition = new Position({x:0, y: -1000, h: 300});
             self.ctx = new DrawingContex(canvasContext, self.canvasWidth/2, self.canvasHeight*0.9, cameraPosition, self._createMode); // multiply by 0.9 to give a little room in "front"
             if ( !self.place ) {
-                var bounds = new Bounds( {left:-self.canvasWidth/2, right:self.canvasWidth/2, front: -100, back: self.canvasHeight, bottom:0, top:self.canvasHeight/2} );
+                var bounds = new Bounds( {left:-self.canvasWidth/2, right:self.canvasWidth/2, front: -100, back: self.canvasHeight, bottom:0, top:self.canvasHeight} );
                 self.setPlace( new Place( {
                     backgroundUrn: null,
                     bounds: bounds
@@ -104,7 +108,7 @@ class World {
      * DRAW
      */
     draw() {
-        this.objects = this.objects.sort( function(a,b) { return ( a.getPosition().y - b.getPosition().y )});
+        this.objects = this.objects.sort( function(a,b) { return ( b.getPosition().y - a.getPosition().y )});
         this.clear();
         if (this.place) this.place.draw(this.ctx,new Position({x:0,y:0,h:0}));
         for ( var i=0; i<this.objects.length; i++ ) {
@@ -115,12 +119,6 @@ class World {
         this.canvas.width = this.canvas.width; // clears the canvas
     }
     getMousePos(evt) {
-        // Maps the mouse event position onto the 3D X-Y horizontal plane
-        // May return null if click is above the hoizon
-        var rect = this.canvas.getBoundingClientRect();
-        var x2D = evt.clientX - rect.left;
-        var y2D = evt.clientY - rect.top;
-        return this.ctx.tFromXY(x2D, y2D);
     }
     
     /*
@@ -150,7 +148,15 @@ class World {
     //window.addEventListener('click', function(e) { mouseEvent(e) } );
         
     mouseEvent(e) {
-        var pos = this.getMousePos(e);
+        // Map the mouse event position onto the 3D X-Y horizontal plane
+        // tFromXY() may return null if click is above the hoizon
+        var rect = this.canvas.getBoundingClientRect();
+        var x2D = e.clientX - rect.left;
+        var y2D = e.clientY - rect.top;
+        var pos = this.ctx.tFromXY(x2D, y2D);
+        e.x2D = x2D;
+        e.y2D = y2D;
+
         if ( this._createMode ) {
             if ( pos !== null ) {
                 this.ctx.setPos(new Position({x:0,y:0,h:0}),new Position({x:0,y:0,h:0}));
@@ -163,6 +169,7 @@ class World {
                 this.ctx.lineTo({x:pos.x, y:3000, h:pos.h});
                 //this.ctx.canvas.arc(pos.x, pos.y, 10, 0, Math.PI * 2, true); // circle
                 this.ctx.canvas.stroke();
+                console.log(e.type+": {x="+pos.x+",y="+pos.y+",h="+pos.h+"}  2D: {x="+e.x2D+",y="+e.y2D+"}");
             }
         }
         if ( e.type === "mousedown" || e.type === "touchstart" || e.type === "click" ) {
@@ -306,7 +313,7 @@ class DrawingContex {
 
 class Place {
     constructor(attributes) {
-        this.name = name;
+        this.name = attributes.name;
         this.backgroundUrl = attributes.backgroundUrl;
         this.bounds = attributes.bounds;
         this.objects = [];
@@ -664,7 +671,7 @@ class WordBubble extends Thing {
             return;
         }
         this.show();
-        this.wordBubbleInterval = setInterval(this.say, this.wordBubbleSeconds*1000); // clear the word bubble later
+        this.wordBubbleInterval = setInterval(this.say.bind(this), this.wordBubbleSeconds*1000); // clear the word bubble later
     }
     getBounds() {
         return this.image.getBounds();
@@ -1474,4 +1481,24 @@ function checkKey(e) {
         return "down";
     }
     return event.key;  // String.fromCharCode(65);
+}
+
+/*
+ * Console - capture console output and display on page
+ */
+function captureConsole(consoleId) {
+    var consoleDiv = document.querySelector('#'+consoleId);
+    ['log','debug','info','warn','error'].forEach(function (verb) {
+        console[verb] = (function (method, verb, consoleDiv) {
+            return function () {
+                method.apply(console, arguments);
+                var msg = document.createElement('div');
+                msg.classList.add(verb);
+                var verbDisp = (verb==='log')?"":verb + ': ';
+                msg.textContent = verbDisp + Array.prototype.slice.call(arguments).join(' ');
+                consoleDiv.appendChild(msg);
+                msg.scrollIntoView(false);
+            };
+        })(console[verb], verb, consoleDiv);
+    });
 }
