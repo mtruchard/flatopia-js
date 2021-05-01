@@ -5,6 +5,7 @@ world = new World({
 });
 
 console.log("Hello World!");
+console.log("It is a sunny day!")
 
 // Add a Bird to the world
 bird = new Character({
@@ -17,13 +18,13 @@ world.add(bird);
 doll = new PaperDoll({x:-200, y:100, h:0});
 world.add(doll);
 
-/*
+
 world.addController( new DebugController() );
 world.addController( new CharacterController({
     character:bird,
     onEvent: function(e){}
 }));
-
+/*
 flower.moveTo({x:0,y:500,h:0});
 flower.moveTo({x:100,y:500,h:0});
 flower.moveTo({x:-100,y:500,h:0});
