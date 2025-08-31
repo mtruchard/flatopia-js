@@ -6,7 +6,7 @@ The Flatopia game engine is written in plain old Java Script (no libraries or co
 The engine is written in object oriented Java Script and is in the single file [flatopia.js](code/flatopia.js).
 
 # Examples
-[First Game](https://mtruchard.github.io/flatopia-js/examples/firstGame/index.html) [(code)](examples/firstGame)
+[First Game](https://mtruchard.github.io/flatopia-js/game/firstGame/index.html) [(code)](examples/firstGame)
 
 [Second Game](https://mtruchard.github.io/flatopia-js/games/secondGame/index.html) [(code)](games/secondGame)
 
