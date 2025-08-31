@@ -21,15 +21,14 @@ world.add(doll);
 bird.do(new Follow( {follower:bird, leader:doll, relX:-100, relY:50, randX:20, randY:20} ) );
 
 world.addController( new DebugController() );
-world.addController( new CharacterController({
-    character:doll,
-    onEvent: function(e){}
-}));
-/*
-flower.moveTo({x:0,y:500,h:0});
-flower.moveTo({x:100,y:500,h:0});
-flower.moveTo({x:-100,y:500,h:0});
-flower.moveTo({x:-100,y:500,h:100});
-flower.moveTo({x:50,y:500,h:100});
-flower.moveTo({x:0,y:0,h:0});
-*/
+//world.addController( new CharacterController({
+//    character:doll,
+//    onEvent: function(e){}
+//}));
+
+doll.moveTo({x:0,y:500,h:0});
+doll.moveTo({x:100,y:500,h:0});
+doll.moveTo({x:-100,y:500,h:0});
+doll.moveTo({x:-100,y:500,h:100});
+doll.moveTo({x:50,y:500,h:100});
+doll.moveTo({x:0,y:0,h:0});
