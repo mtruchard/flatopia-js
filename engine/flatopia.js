@@ -161,14 +161,14 @@ class World {
             if ( pos !== null ) {
                 this.ctx.setPos(new Position({x:0,y:0,h:0}),new Position({x:0,y:0,h:0}));
                 this.ctx.canvas.beginPath();
-                this.ctx.moveTo({x:-1000, y:pos.y, h:pos.h});
-                this.ctx.lineTo({x:1000, y:pos.y, h:pos.h});
+                this.ctx.moveTo({x:0, y:0, h:0});
+                this.ctx.lineTo(pos);
                 this.ctx.canvas.stroke();
-                this.ctx.canvas.beginPath();
-                this.ctx.moveTo({x:pos.x, y:0, h:pos.h});
-                this.ctx.lineTo({x:pos.x, y:3000, h:pos.h});
+                //this.ctx.canvas.beginPath();
+                //this.ctx.moveTo({x:pos.x, y:0, h:pos.h});
+                //this.ctx.lineTo({x:pos.x, y:3000, h:pos.h});
                 //this.ctx.canvas.arc(pos.x, pos.y, 10, 0, Math.PI * 2, true); // circle
-                this.ctx.canvas.stroke();
+                //this.ctx.canvas.stroke();
                 console.log(e.type+": {x="+pos.x+",y="+pos.y+",h="+pos.h+"}  2D: {x="+e.x2D+",y="+e.y2D+"}");
             }
         }
