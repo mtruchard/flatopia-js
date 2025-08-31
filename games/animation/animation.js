@@ -26,9 +26,11 @@ world.addController( new DebugController() );
 //    onEvent: function(e){}
 //}));
 
-doll.moveTo({x:0,y:500,h:0});
-doll.moveTo({x:100,y:500,h:0});
-doll.moveTo({x:-100,y:500,h:0});
-doll.moveTo({x:-100,y:500,h:100});
-doll.moveTo({x:50,y:500,h:100});
-doll.moveTo({x:0,y:0,h:0});
+for ( var i = 0; i<100; i++ ) {
+    doll.moveTo({x:0,y:500,h:0});
+    doll.moveTo({x:100,y:500,h:0});
+    doll.moveTo({x:-100,y:500,h:0});
+    doll.moveTo({x:-100,y:500,h:100});
+    doll.moveTo({x:50,y:500,h:100});
+    doll.moveTo({x:0,y:0,h:0});
+}
