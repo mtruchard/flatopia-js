@@ -1,6 +1,6 @@
 world = new World({
-    canvasId:"canvas",
-    consoleId:"console",
+    canvasId:"flatopia_canvas",
+    consoleId:"flatopia_console",
     width:1000, height:800,
 });
 
