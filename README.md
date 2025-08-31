@@ -6,11 +6,11 @@ The Flatopia game engine is written in plain old Java Script (no libraries or co
 The engine is written in object oriented Java Script and is in the single file [flatopia.js](code/flatopia.js).
 
 # Examples
-[First Game](https://mtruchard.github.io/flatopia-js/game/firstGame/index.html) [(code)](examples/firstGame)
+[First Game](https://mtruchard.github.io/flatopia-js/games/firstGame/index.html) [(code)](examples/firstGame)
 
 [Second Game](https://mtruchard.github.io/flatopia-js/games/secondGame/index.html) [(code)](games/secondGame)
 
-[Scratchpad](https://mtruchard.github.io/flatopia-js/examples/scratchpad/index.html) [(code)](examples/scratchpad)
+[Scratchpad](https://mtruchard.github.io/flatopia-js/games/scratchpad/index.html) [(code)](examples/scratchpad)
 
 # World Geometry
 All locations and movement are described using 3D coordinate positions in JSON such as {x:0,y:100,h:50}.
