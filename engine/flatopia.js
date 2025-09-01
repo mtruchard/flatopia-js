@@ -728,8 +728,7 @@ class InvisibleBox extends Thing {
     }
     draw(ctx, containerPos) {
         if ( ctx.createMode ) {
-            this.bounds.draw( ctx, containerPos );
-            //ctx.stroke();
+            this.bounds.draw( ctx, containerPos.translate(this.pos) );
         }
     }
     getBounds() {
