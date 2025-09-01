@@ -118,10 +118,10 @@ class World {
             // draw center point
             this.ctx.setPos(new Position({x:0,y:0,h:0}),new Position({x:0,y:0,h:0}));
             this.ctx.canvas.beginPath();
-            this.ctx.moveTo({x:-55, y:0, h:0});
-            this.ctx.lineTo({x:55, y:0, h:0});
-            this.ctx.moveTo({x:0, y:-55, h:0});
-            this.ctx.lineTo({x:0, y:55, h:0});
+            this.ctx.moveTo({x:-5, y:0, h:0});
+            this.ctx.lineTo({x:5, y:0, h:0});
+            this.ctx.moveTo({x:0, y:-5, h:0});
+            this.ctx.lineTo({x:0, y:5, h:0});
             this.ctx.canvas.stroke();
         }
     }
@@ -294,8 +294,8 @@ class DrawingContex {
         }
         
         // WRONG Y = Yc*Hc/(Y2d + Hc + Yo) + Yc
-        // Y = Hc/((Y2d - Yo + Hc)*Yc) + Yc
-        var y3 = this.cameraPosition.h / ((y - this.offsetY + this.cameraPosition.h) * this.cameraPosition.y) + this.cameraPosition.y;
+        // Y = Yc*Hc/((Yo-Y2d-Hc) + Yc
+        var y3 = this.cameraPosition.y * this.cameraPosition.h / (this.offsetY - y - this.cameraPosition.h) + this.cameraPosition.y;
         // WRONGX = (X2d - Xc)*(Y-Yc)/Yc + Xc
         // X = Xc - (X2d - Xo - Xc)*(Y-Yc)/Yc
         var x3 = this.cameraPosition.x - (x - this.offsetX - this.cameraPosition.x) * ((y3 - this.cameraPosition.y)/this.cameraPosition.y)
