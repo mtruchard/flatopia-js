@@ -57,11 +57,11 @@ var mountainPlace = new Place( {
         {type: Thing, name:"flower", startX: 200, startY: 600, imageUrl:"flower.png"}
     ]
 });
-var mountainStairs = new InvisibleBox( {name:"Mountain Stairs", x:15,y:-1279,h:0, width:100,height:10,depth:20} );
+var mountainStairs = new InvisibleBox( {name:"Mountain Stairs", x:66,y:714,h:0, width:100,height:10,depth:20} );
 mountainPlace.add(mountainStairs);
-var forestPassage = new InvisibleBox( {name:"forestPassage", left:1490, top:425, right:1500, bottom:800} );
+var forestPassage = new InvisibleBox( {name:"forestPassage", x:716,y:250,h:0, width:10,height:10,depth:1000} );
 mountainPlace.add(forestPassage);
-var forestSign = new Thing( {name:"forestSign", startX:1200, startY:500, imageUrl:"forestSign.png"} );
+var forestSign = new Thing( {name:"forestSign", x:533,y:339,h:0, imageUrl:"forestSign.png"} );
 mountainPlace.add(forestSign);
 mountainPlace.onEvent( function( e ) {
     if ( e.actor === alien && e.type === "steppedOn" && e.object === mountainStairs && controlsOn ) {
