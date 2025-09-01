@@ -267,8 +267,8 @@ class DrawingContex {
         // x2d is right, y2d is down
         // -Yc/(Y-Yc) // focal ratio, negative since Yc goes negative outside screen
         var f = (this.cameraPosition.y/(p2.y - this.cameraPosition.y))*-1;
-        // X2d = ((X - Xc) * (Yc/(Y-Yc))) + Xc
-        // Y2d = (-(H - Hc) * (Yc/(Y-Yc))) - Hc  // H goes opposite direction from Y2d
+        // X2d = ((X - Xc) * (-Yc/(Y-Yc))) + Xc
+        // Y2d = Yo - ((H - Hc) * (-Yc/(Y-Yc))) - Hc  // H goes opposite direction from Y2d
         var x2d = this.offsetX + ((p2.x-this.cameraPosition.x) * f) + this.cameraPosition.x;
         var y2d = this.offsetY - ((p2.h-this.cameraPosition.h) * f) - this.cameraPosition.h;
         return new Point2D({x: x2d, y: y2d });
@@ -283,9 +283,9 @@ class DrawingContex {
             return null;
         }
         
-        // WRONG Y = Yc*Hc/(Y2d + Hc + Offy) + Yc
-        // Y = Hc*Yc/(Hc + Yo - Y2d) + Yc
-        var y3 = (this.cameraPosition.h * this.cameraPosition.y) / (this.cameraPosition.h + this.offsetY - y) + this.cameraPosition.y;
+        // WRONG Y = Yc*Hc/(Y2d + Hc + Yo) + Yc
+        // Y = Hc/((Y2d - Yo + Hc)*Yc) + Yc
+        var y3 = this.cameraPosition.h / ((y - this.offsetY + this.cameraPosition.h) * this.cameraPosition.y) + this.cameraPosition.y;
         // WRONGX = (X2d - Xc)*(Y-Yc)/Yc + Xc
         // X = Xc - (X2d - Xo - Xc)*(Y-Yc)/Yc
         var x3 = this.cameraPosition.x - (x - this.offsetX - this.cameraPosition.x) * ((y3 - this.cameraPosition.y)/this.cameraPosition.y)
