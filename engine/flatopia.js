@@ -181,7 +181,7 @@ class World {
                 //this.ctx.canvas.stroke();
                 console.log(e.type+": {x="+pos.x+",y="+pos.y+",h="+pos.h+"}  2D: {x="+e.x2D+",y="+e.y2D+"}");
 
-                posBounds = pos.getBounds().translate(pos);
+                let posBounds = pos.getBounds().translate(pos);
                 this.hitAnything(posBounds).forEach( o => {
                     console.log( "Hit: "+o.name);
                 });
