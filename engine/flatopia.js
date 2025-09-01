@@ -116,11 +116,12 @@ class World {
         }
         if ( this._createMode ) {
             // draw center point
+            this.ctx.setPos(new Position({x:0,y:0,h:0}),new Position({x:0,y:0,h:0}));
             this.ctx.canvas.beginPath();
-            this.ctx.moveTo({x:-5, y:0, h:0});
-            this.ctx.lineTo({x:5, y:0, h:0});
-            this.ctx.moveTo({x:0, y:-5, h:0});
-            this.ctx.lineTo({x:0, y:5, h:0});
+            this.ctx.moveTo({x:-55, y:0, h:0});
+            this.ctx.lineTo({x:55, y:0, h:0});
+            this.ctx.moveTo({x:0, y:-55, h:0});
+            this.ctx.lineTo({x:0, y:55, h:0});
             this.ctx.canvas.stroke();
         }
     }
