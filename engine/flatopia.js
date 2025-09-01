@@ -338,6 +338,15 @@ class Place {
         this.container.setBackground(this.backgroundUrl);
         if ( ctx.createMode ) {
             this.bounds.draw( ctx, containerPos );
+
+            // draw center point
+            this.ctx.canvas.beginPath();
+            this.ctx.moveTo({x:-5, y:0, h:0});
+            this.ctx.lineTo({x:5, y:0, h:0});
+            this.ctx.moveTo({x:0, y:-5, h:0});
+            this.ctx.lineTo({x:0, y:5, h:0});
+            this.ctx.canvas.stroke();
+
             ctx.canvas.stroke();
         }
     }
