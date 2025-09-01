@@ -5,6 +5,9 @@
     </head>
     <body>
         <div id="page">
+            <h1>The Marvelous Battlefield of Pokemon</h1>
+            <h3> by Alva and Michael Truchard - Level 1 - defeat 15 pokemon</h3>
+            <h3>arrows=move, d=dance, a=alva, e=emma, j=jump, b=battle, s=stop, x=debug</h3>
             <canvas id="canvas" width="1000", height="500"></canvas>
             <div id="console"></div>
         </div>
@@ -14,11 +17,7 @@
 world = new World({
     canvasId:"canvas",
     consoleId:"console",
-    width:1500, height:800,
-    objects: [
-        {type: Text, text:"The Marvelous Battlefield of Pokemon by Alva and Michael Truchard - Level 1 - defeat 15 pokemon", x:-400, y:0, h:420, font:"20px Arial"},
-        {type: Text, text:"arrows=move, d=dance, a=alva, e=emma, j=jump, b=battle, s=stop, x=debug", x:-400, y:0, h:400, font:"20px Arial"}
-    ]
+    width:1500, height:800
 });
 
 /*
@@ -41,9 +40,7 @@ alien = new Character({
     ],
     wordBubble: {imageUrl:"word_bubble.png", x:155,y:0,h:120}
 });
-world.add(alien);
 pikachu = new Character( {name: "Pikachu", x:400, y:560, imageUrl:"pikachu.png"} );
-world.add(pikachu);
 pikachu.do(new Follow( {follower:pikachu, leader:alien, relX:-100, relY:50, randX:20, randY:20} ) );
 
 /*
@@ -57,31 +54,29 @@ var mountainPlace = new Place( {
         {type: Thing, name:"flower", startX: 200, startY: 600, imageUrl:"flower.png"}
     ]
 });
-var mountainStairs = new InvisibleBox( {name:"Mountain Stairs", x:66,y:714,h:0, width:100,height:10,depth:20} );
-mountainPlace.add(mountainStairs);
-var forestPassage = new InvisibleBox( {name:"forestPassage", x:716,y:250,h:0, width:10,height:10,depth:1000} );
-mountainPlace.add(forestPassage);
-var forestSign = new Thing( {name:"forestSign", x:533,y:339,h:0, imageUrl:"forestSign.png"} );
-mountainPlace.add(forestSign);
-mountainPlace.onEvent( function( e ) {
-    if ( e.actor === alien && e.type === "steppedOn" && e.object === mountainStairs && controlsOn ) {
-        controlsOn = false;
-        world.setBounds( new Bounds( {left:0, top:0, right:1500, bottom:800, front:0, back: 3000} ) );
-        alien.moveTo( mountainStairs );
-        alien.moveTo({x:940,y:311,h:0});
-        alien.do( new Do( {doFunction:function() {
-            world.setPlace(mountainTop);
-            alien.setPosition({x:500,y:500,h:0});
-            controlsOn = true;
-        }}) );
-    }
-    if ( e.actor === alien && e.type === "steppedOn" && e.object === forestPassage && controlsOn ) {
-        world.setPlace( forestPlace );
-        alien.setPosition({x:120,y:650,h:0});
-        controlsOn = true;
-    }
+var onTheStairs = new Place( {
+    name: "On The Stairs",
+    backgroundUrl: "mountainPlace.jpg",
+    bounds: new Bounds( {left:-750, right:750, bottom:0, top:800, front: 750, back: 3000} ),
+    objects: [
+        {type: Thing, name:"flower", startX: 200, startY: 600, imageUrl:"flower.png"}
+    ]
 });
-
+var mountainStairs = new Portal( {name:"Mountain Stairs", x:66,y:710,h:0, width:100,height:10,depth:90, actionFunction:(e=>{
+    if ( e.actor === alien ) {
+        alien.moveTo( {place:onTheStairs,x:940,y:311,h:0});
+        alien.moveTo( {place:mountainTop,x:500,y:500,h:0});
+    }
+})});
+mountainPlace.add(mountainStairs);
+var forestPassage = new Portal( {name:"forestPassage", x:716,y:250,h:0, width:10,height:10,depth:1000, actionFunction:(e=>{
+    if ( e.actor === alien ) {
+        alien.moveTo( {place:forestPlace,x:-458,y:2,h:0});
+    }
+})});
+mountainPlace.add(forestPassage);
+var forestSign = new Img( {name:"forestSign", x:533,y:339,h:0, imageUrl:"forestSign.png"} );
+mountainPlace.add(forestSign);
 
 /*
  * MOUNTAIN TOP
@@ -91,15 +86,12 @@ var mountainTop = new Place( {
     backgroundUrl: "mountainTop.jpg",
     bounds: new Bounds( {left:-750, right:750, bottom:0, top:800, front: -100, back: 800} )
 });
-var mountainPlacePassage = new InvisibleBox( {name:"mountainPlacePassage", left:0, top:790, right:1500, bottom:800} );
-mountainTop.add(mountainPlacePassage);
-mountainTop.onEvent( function( e ) {
-    if ( e.actor === alien && e.type === "steppedOn" && e.object === mountainPlacePassage && controlsOn ) {
-        world.setPlace( mountainPlace );
-        alien.setPosition({x:820,y:500,h:0});
-        controlsOn = true;
+var mountainPlacePassage = new Portal( {name:"mountainPlacePassage", left:0, top:790, right:1500, bottom:800, actionFunction:(e=>{
+    if ( e.actor === alien ) {
+        alien.moveTo( {place:mountainPlace,x:716,y:200,h:0});
     }
-});
+})});
+mountainTop.add(mountainPlacePassage);
 
 /*
  * FOREST PLACE
@@ -109,17 +101,17 @@ var forestPlace = new Place( {
     backgroundUrl: "forestPlace.jpg",
     bounds: new Bounds( {left:-750, right:750, bottom:0, top:800, front: -100, back: 800} )
 });
-var mountainPlacePassage2 = new InvisibleBox( {name:"mountainPlacePassage2", left:0, top:620, right:10, bottom:800} );
-forestPlace.add(mountainPlacePassage2);
-forestPlace.onEvent( function( e ) {
-    if ( e.actor === alien && e.type === "steppedOn" && e.object === mountainPlacePassage2 && controlsOn ) {
-        world.setPlace( mountainPlace );
-        alien.setPosition({x:1400,y:alien.pos.y,h:0});
-        controlsOn = true;
+var mountainPlacePassage2 = new InvisibleBox( {name:"mountainPlacePassage2", left:0, top:620, right:10, bottom:800, actionFunction:(e=>{
+    if ( e.actor === alien ) {
+        alien.moveTo( {place:mountainPlace,x:66,y:710,h:0});
     }
-});
+})});
+forestPlace.add(mountainPlacePassage2);
 
 world.setPlace( mountainPlace );
+world.setMainCharacter( alien );
+mountainPlace.add(pikachu);
+mountainPlace.add(alien);
 
 /*
  * CONTROLS
@@ -127,7 +119,7 @@ world.setPlace( mountainPlace );
 world.addController( new DebugController() );
 world.addController( new CharacterController({ character: alien, onEvent:function(e) {
     var key = e.key;
-    let alien = e.character;
+    let alien = e.actor;
     if ( key === "d" ) {
         // Dance
         alien.say("let us dance!");

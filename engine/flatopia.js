@@ -6,17 +6,12 @@
  *    x is 0 at left, y is zero at front.
  */
 
+let theWorld = null;
+
 class World {
     constructor(attributes) {
+        theWorld = this;
         this.canvasId = attributes.canvasId;
-        this.worldObjects = [];  // Objects in the world but not in the place
-        this.objects = []; // All objects including those from the place
-        if ( attributes.objects ) {
-            for ( var i=0; i<attributes.objects.length; i++) {
-                this.add( create(attributes.objects[i]) );
-            }
-        }
-        //this.$canvas = null;
         this.canvas = null;
         this.canvasWidth;
         this.canvasHeight;
@@ -28,6 +23,7 @@ class World {
         }
         this.isReady = false;
         this.place = null;
+        this.mainCharacter = null;
         this._createMode = (attributes.createMode)?attributes.createMode:false;
 
         if ( attributes.consoleId ) {
@@ -74,12 +70,6 @@ class World {
         };
     }
     
-    add( object ) {
-        this.objects.push(object);
-        this.worldObjects.push(object);
-        object.container = this;
-    }
-    
     ready( readyFunction ) {
         this.readyFunction = readyFunction;
         if ( this.isReady ) this.readyFunction();
@@ -87,14 +77,11 @@ class World {
     
     setPlace( place ) {
         this.place = place;
-        //place.bounds = this.bounds;
-        this.objects = place.objects.concat( this.worldObjects ); // concat creates new array.
-        this.objects.forEach( o => { o.container = this; });
-        place.container = this;
     }
-    /* this.setBounds = function( bounds ) {
-        this.bounds = bounds;
-    }; */
+    
+    setMainCharacter( mainCharacter ) {
+        this.mainCharacter = mainCharacter;
+    }
     
     setBackground(backgroundUrl) {
         if (backgroundUrl) {
@@ -108,12 +95,8 @@ class World {
      * DRAW
      */
     draw() {
-        this.objects = this.objects.sort( function(a,b) { return ( b.getPosition().y - a.getPosition().y )});
         this.clear();
         if (this.place) this.place.draw(this.ctx,new Position({x:0,y:0,h:0}));
-        for ( var i=0; i<this.objects.length; i++ ) {
-            this.objects[i].draw(this.ctx,new Position({x:0,y:0,h:0}));
-        }
         if ( this._createMode ) {
             // draw center point
             this.ctx.setPos(new Position({x:0,y:0,h:0}),new Position({x:0,y:0,h:0}));
@@ -135,27 +118,8 @@ class World {
      * ACT
      */
     act() {
-        if (this.place && this.place.act) this.place.act();
-        for ( var i=0; i<this.objects.length; i++ ) {
-            if ( this.objects[i].act ) {
-                this.objects[i].act();
-            }
-        }
+        if (this.place) this.place.act();
     }
-
-    /*
-     * EVENTS
-     * {
-     *    world:
-     *    place:
-     *    type: 'ready', 'mousedown', 'keydown', 'steppedOn', 'bumpedInto', ...
-     *    key:
-     *    pos:  location in world coordinates
-     *    actor: the object that acted on something
-     *    object: the object that was acted upon
-     * }
-     */
-    //window.addEventListener('click', function(e) { mouseEvent(e) } );
         
     mouseEvent(e) {
         // Map the mouse event position onto the 3D X-Y horizontal plane
@@ -182,9 +146,11 @@ class World {
                 console.log(e.type+": {x="+pos.x+",y="+pos.y+",h="+pos.h+"}  2D: {x="+e.x2D+",y="+e.y2D+"}");
 
                 let posBounds = pos.getBounds().translate(pos);
-                this.hitAnything(posBounds).forEach( o => {
-                    console.log( "Hit: "+o.name);
-                });
+                if ( this.place ) {
+                    this.place.hitAnything(posBounds).forEach( o => {
+                        console.log( "Hit: "+o.name);
+                    });
+                }
             }
         }
         if ( e.type === "mousedown" || e.type === "touchstart" || e.type === "click" ) {
@@ -202,32 +168,19 @@ class World {
     }
     fireEvent( event ) {
         event.world = this;
-        event.place = this.place;
         for ( const controller of this.controllers ) {
             let handled = controller.onEvent( event );
             if (handled) break;
         }
-        if ( this.place.onEvent ) {
+        if ( event.place === this.place ) {
             this.place.onEvent( event );
         }
     }
     
-    hitAnything( bounds ) {
-        var objects = [];
-        for ( var i=0; i<this.objects.length; i++ ) {
-            var anObject = this.objects[i];
-            var aPos = anObject.getPosition();
-            if (bounds.intersectsWith( anObject.getBounds().translate(aPos) ) ) {
-                objects.push(anObject);
-            }
-        }
-        return objects;
-    }
-    
-    getBounds() {
-        if ( this.place === null ) return null;
-        return this.place.getBounds();
-    }
+    //getBounds() {
+    //    if ( this.place === null ) return null;
+    //    return this.place.getBounds();
+   // }
     
     get createMode() { return this._createMode; }
     set createMode( createMode ) {
@@ -340,27 +293,73 @@ class Place {
                 this.add( create(attributes.objects[i]) );
             }
         }
-        this.container = null;
         this.eventFunction = null;
     }
     
     add( object ) {
         this.objects.push(object);
+        if ( object.container ) {
+            object.container.remove( object );
+        }
         object.container = this;
+        if ( theWorld.mainCharacter === object ) {
+            theWorld.setPlace(this);
+        }
+    }
+    remove( object ) {
+        const idx = this.objects.indexOf(object);
+        if (idx !== -1) {
+            this.objects.splice(idx, 1);
+            object.container = null;
+        }
     }
     
     draw(ctx, containerPos) {
-        this.container.setBackground(this.backgroundUrl);
+        theWorld.setBackground(this.backgroundUrl);
+        let sObjects = this.objects.sort( function(a,b) { return ( b.getPosition().y - a.getPosition().y )});
+        for ( var i=0; i<sObjects.length; i++ ) {
+            sObjects[i].draw(ctx,containerPos);
+        }
         if ( ctx.createMode ) {
             this.bounds.draw( ctx, containerPos );
             ctx.canvas.stroke();
         }
     }
+    act() {
+        for ( var i=0; i<this.objects.length; i++ ) {
+            if ( this.objects[i].act ) {
+                this.objects[i].act();
+            }
+        }
+    }
+    hitAnything( bounds ) {
+        var objects = [];
+        for ( var i=0; i<this.objects.length; i++ ) {
+            var anObject = this.objects[i];
+            var aPos = anObject.getPosition();
+            if (bounds.intersectsWith( anObject.getBounds().translate(aPos) ) ) {
+                objects.push(anObject);
+            }
+        }
+        return objects;
+    }
     getBounds() {
         return this.bounds;
     }
-    onEvent( eventFunction ) {
-        this.eventFunction = eventFunction;
+    setBounds( bounds ) {
+        this.bounds = bounds;
+    }
+    fireEvent(event) {
+        event.place = this;
+        theWorld.fireEvent( event );
+    }
+    onEvent( event ) {
+        if ( this.eventFunction ) this.eventFunction(event);
+        for ( const object of this.objects ) {
+            if ( (event.actor === this || event.object === object) ) {
+                object.onEvent( event );
+            }
+        }
     }
 }
 
@@ -402,7 +401,7 @@ class Thing {
         if ( !this.isShown ) return;
         if ( ctx.createMode ) {
             let pos = containerPos.translate(this.pos);
-            this.getFeetRect().draw(ctx,pos);
+            this.getFeetBounds().draw(ctx,pos);
             this.getBounds().draw(ctx,pos);
             // Draw 3x3 square at feet at height 0
             //ctx.setPos(containerPos,this.pos);
@@ -422,7 +421,7 @@ class Thing {
     }
     
     /* Get the bounds rectangle that touches the ground in Thing coordinates where (0,0,0) is the position of the feet */
-    getFeetRect() {
+    getFeetBounds() {
         var bounds = this.getBounds();
         var width = bounds.width;
         var depth = bounds.depth;
@@ -436,7 +435,7 @@ class Thing {
         var width = bounds.width;
         var height = bounds.height;
         this.topLeft = new Point( {x:this.pos.x - width*0.5, y:this.pos.y - height*0.8} );
-        this.feetRect = this.getFeetRect();
+        this.feetRect = this.getFeetBounds();
         return this.feetRect.translate(this.topLeft.x,this.topLeft.y);
     }*/
 
@@ -453,24 +452,24 @@ class Thing {
                 this.actions.shift();
             }
         }
-        this._checkHits();
     }
     
     _checkHits() {
+        let self = this;
         var hitObjects = this.container.hitAnything(this.getBounds().translate(this.pos));
-        hitObjects = hitObjects.filter( function(o) { if ( o !== this ) return true; });
+        hitObjects = hitObjects.filter( function(o) { return ( o !== self ); });
         hitObjects.forEach( o => {
-            this.fireEvent( {
+            self.fireEvent( {
                 type : "bumpedInto",
-                object: hitObjects[0]
+                object: o
             });
         });
-        var steppedOnObjects = this.container.hitAnything(this.getFeetRect().translate(this.pos));
-        steppedOnObjects = steppedOnObjects.filter( function(o) { if ( o !== this ) return true; });
+        var steppedOnObjects = this.container.hitAnything(this.getFeetBounds().translate(this.pos));
+        steppedOnObjects = steppedOnObjects.filter( function(o) { return ( o !== self ); });
         steppedOnObjects.forEach( o => {
-            this.fireEvent( {
+            self.fireEvent( {
                 type : "steppedOn",
-                object: steppedOnObjects[0]
+                object: o
             });
         });
     }
@@ -480,14 +479,14 @@ class Thing {
         if ( typeof p.h === 'undefined' ) {
             p.h = this.pos.h;
         }
-        this.actions.push( new MoveBy( {character:this, pos:p} ) );
+        this.actions.push( new MoveBy( {actor:this, pos:p} ) );
     }
     moveTo( attributes ) {
         var p = new Position(attributes);
         if ( typeof p.h === 'undefined' ) {
             p.h = this.pos.h;
         }
-        this.actions.push( new MoveTo( {character:this, pos:p} ) );
+        this.actions.push( new MoveTo( {actor:this, place: attributes.place?attributes.place:null, pos:p} ) );
     }
     stop() {
         this.actions = [];
@@ -511,6 +510,7 @@ class Thing {
         var delta = this.container.getBounds().keepInside( adjBounds );
         if ( delta.x !== 0 || delta.y !== 0 || delta.h !== 0) {
             this.pos = new Position( {x:this.pos.x+delta.x, y:this.pos.y+delta.y, h:this.pos.h+delta.h} );
+            this._checkHits();
         }
         
         return delta;
@@ -533,12 +533,11 @@ class Thing {
         if ( this.isReady ) this.readyFunction();
     };*/
     
-    onEvent( eventFunction ) {
-        this.eventFunction = eventFunction;
+    onEvent( event ) {
+        if ( this.eventFunction ) this.eventFunction(event)
     }
     fireEvent(event) {
         event.actor = this;
-        if ( this.eventFunction ) this.eventFunction(event);
         this.container.fireEvent( event );
     }
 }
@@ -738,6 +737,27 @@ class InvisibleBox extends Thing {
     }
     getBounds() {
         return this.bounds;
+    }
+}
+
+class Portal extends InvisibleBox {
+    constructor(attributes) {
+        super(attributes);
+        this.bounds = new Bounds({left:attributes.width/-2, top:attributes.height, right:attributes.width/2, bottom:0, front:attributes.depth/-2, back:attributes.depth/2});
+        this.actionFunction = attributes.actionFunction;
+        let self = this;
+    }
+    draw(ctx, containerPos) {
+        super.draw(ctx, containerPos);
+    }
+    getBounds() {
+        return this.bounds;
+    }
+    onEvent(e) {
+        super.onEvent(e);
+        if ( e.type === "steppedOn" && e.object === this ) {
+            this.actionFunction(e);
+        };
     }
 }
 
@@ -1174,7 +1194,8 @@ class Do extends Action {
 class MoveTo extends Action {
     constructor(attributes) {
         super(attributes);
-        this.character = attributes.character;
+        this.actor = attributes.actor;
+        this.place = attributes.place;
         if ( attributes.target ) {
             this.target = new Position(attributes.target);
         } else if ( attributes.pos ) {
@@ -1185,9 +1206,12 @@ class MoveTo extends Action {
         this.moveRate = 10;
     }
     do() {
-        var x = this.character.getPosition().x;
-        var y = this.character.getPosition().y;
-        var h = this.character.getPosition().h;
+        if ( this.place ) {
+            this.place.add(this.actor);
+        }
+        var x = this.actor.getPosition().x;
+        var y = this.actor.getPosition().y;
+        var h = this.actor.getPosition().h;
         if ( x > this.target.x ) {
             x = x - this.moveRate;
             if ( x < this.target.x ) x = this.target.x;
@@ -1212,7 +1236,7 @@ class MoveTo extends Action {
             h = h + this.moveRate; 
             if ( h > this.target.h ) h = this.target.h;
         }
-        var delta = this.character.setPosition({x:x,y:y,h:h});
+        var delta = this.actor.setPosition({x:x,y:y,h:h});
         if ( delta.x !== 0 || delta.y !== 0 || delta.h !== 0 ) return true; // movement done if we hit bounds 
         return ( y === this.target.y ) && (x === this.target.x ) && (h === this.target.h );  // true if movement done
     }
@@ -1221,7 +1245,7 @@ class MoveTo extends Action {
 class MoveBy extends Action {
     constructor(attributes) {
         super(attributes);
-        this.character = attributes.character;
+        this.actor = attributes.actor;
         if ( attributes.pos ) {
             this.delta = new Position(attributes.pos);
         } else {
@@ -1232,9 +1256,9 @@ class MoveBy extends Action {
         this.moveRate = 10;
     }
     do() {
-        var x = this.character.getPosition().x;
-        var y = this.character.getPosition().y;
-        var h = this.character.getPosition().h;
+        var x = this.actor.getPosition().x;
+        var y = this.actor.getPosition().y;
+        var h = this.actor.getPosition().h;
         if ( !this.target ) {
             // Set target on first move
             this.target = new Position({
@@ -1267,7 +1291,7 @@ class MoveBy extends Action {
             h = h + this.moveRate; 
             if ( h > this.target.h ) y = this.target.h;
         }
-        var delta = this.character.setPosition({x:x,y:y,h:h});
+        var delta = this.actor.setPosition({x:x,y:y,h:h});
         if ( delta.x !== 0 || delta.y !== 0 || delta.h !== 0 ) return true; // movement done if we hit bounds 
         return ( x === this.target.x ) && (y === this.target.y ) && (h === this.target.h );  // true if movement done
     }
@@ -1276,8 +1300,8 @@ class MoveBy extends Action {
 class Follow extends Action {
     constructor(attributes) {
         super(attributes);
-        this.character = attributes.follower;
-        this.followedCharacter = attributes.leader;
+        this.follower = attributes.follower;
+        this.leader = attributes.leader;
         this.relX = attributes.relX;
         this.relY = attributes.relY;
         this.relH = attributes.relH;
@@ -1289,15 +1313,19 @@ class Follow extends Action {
         this.moveRate = 10;
     }
     do() {
-        var to = this.followedCharacter.getPosition();
+        if ( this.leader.place !== this.follower.place ) {
+            this.leader.place.add(this.follower);
+        }
+        // Set target on each move
+        var to = this.leader.getPosition();
         this.target = new Position({
             x: to.x+this.relX+ ((Math.random()*0.5) * this.randX),
             y: to.y+this.relY+ ((Math.random()*0.5) * this.randY),
             h: to.h+this.relH+ ((Math.random()*0.5) * this.randH)
         });
-        var x = this.character.getPosition().x;
-        var y = this.character.getPosition().y;
-        var h = this.character.getPosition().h;
+        var x = this.follower.getPosition().x;
+        var y = this.follower.getPosition().y;
+        var h = this.follower.getPosition().h;
         if ( x > this.target.x + this.randX ) {
             x = x - this.moveRate;
             if ( x < this.target.x ) x = this.target.x;
@@ -1322,7 +1350,7 @@ class Follow extends Action {
             h = h + this.moveRate; 
             if ( h > this.target.h ) y = this.target.h;
         }
-        this.character.setPosition({x:x,y:y,h:h});
+        this.follower.setPosition({x:x,y:y,h:h});
         return false;
     }
 }
@@ -1330,11 +1358,11 @@ class Follow extends Action {
 class Say extends Action {
     constructor(attributes) {
         super(attributes);
-        this.character = attributes.speaker;
+        this.speaker = attributes.speaker;
         this.words = attributes.words;
     }
     do() {
-       this.character.sayNow(this.words);
+       this.speaker.sayNow(this.words);
        return true;
     }
 }
@@ -1448,7 +1476,7 @@ class CharacterController {
             done = true;
         }
         if ( !done && this.customOnEvent ) {
-            e.character = this.character;
+            e.actor = this.character;
             done = this.customOnEvent(e);
         }
         return done;
