@@ -180,6 +180,11 @@ class World {
                 //this.ctx.canvas.arc(pos.x, pos.y, 10, 0, Math.PI * 2, true); // circle
                 //this.ctx.canvas.stroke();
                 console.log(e.type+": {x="+pos.x+",y="+pos.y+",h="+pos.h+"}  2D: {x="+e.x2D+",y="+e.y2D+"}");
+
+                posBounds = pos.getBounds().translate(pos);
+                hitAnything(posBounds).forEach( o => {
+                    console.log( "Hit: "+o.name);
+                });
             }
         }
         if ( e.type === "mousedown" || e.type === "touchstart" || e.type === "click" ) {
@@ -207,12 +212,12 @@ class World {
         }
     }
     
-    hitAnything( rect ) {
+    hitAnything( bounds ) {
         var objects = [];
         for ( var i=0; i<this.objects.length; i++ ) {
             var anObject = this.objects[i];
             var aPos = anObject.getPosition();
-            if (rect.intersectsWith( anObject.getBounds().translate(aPos) ) ) {
+            if (bounds.intersectsWith( anObject.getBounds().translate(aPos) ) ) {
                 objects.push(anObject);
             }
         }
@@ -1024,6 +1029,9 @@ class Position {
     }
     deltaTo( pos ) {
         return new Position( {x:pt.x-this.x, y:pt.y-this.y, h:pt.h-this.h} );
+    }
+    getBounds() {
+        return new Bounds( {left:0, right:0, top:0, bottom:0, front:0, back:0} );
     }
 }
 
