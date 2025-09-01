@@ -1406,7 +1406,7 @@ class CharacterController {
     constructor(attributes) {
         this.character = attributes.character;
         this.customOnEvent = attributes.onEvent;
-        this.jumpHeight = attributes.jumpHeight?attributes.jumpHeight:0;
+        this.jumpHeight = attributes.jumpHeight?attributes.jumpHeight:10;
         this.moveDistance = attributes.moveDistance?attributes.moveDistance:10;
         this.world = null; // set later
     }
