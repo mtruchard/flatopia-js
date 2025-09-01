@@ -459,20 +459,20 @@ class Thing {
     _checkHits() {
         var hitObjects = this.container.hitAnything(this.getBounds().translate(this.pos));
         hitObjects = hitObjects.filter( function(o) { if ( o !== this ) return true; });
-        if ( hitObjects.length > 0 ) {
+        hitObjects.forEach( o => {
             this.fireEvent( {
                 type : "bumpedInto",
                 object: hitObjects[0]
             });
-        }
+        });
         var steppedOnObjects = this.container.hitAnything(this.getFeetRect().translate(this.pos));
         steppedOnObjects = steppedOnObjects.filter( function(o) { if ( o !== this ) return true; });
-        if ( steppedOnObjects.length > 0 ) {
+        steppedOnObjects.forEach( o => {
             this.fireEvent( {
                 type : "steppedOn",
                 object: steppedOnObjects[0]
             });
-        }
+        });
     }
     
     moveBy( attributes ) {
