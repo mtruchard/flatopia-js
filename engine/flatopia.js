@@ -998,6 +998,9 @@ class Point {
     deltaTo( pt ) {
         return new Point( {x:pt.x-this.x, y:pt.y-this.y, h:pt.h-this.h} );
     }
+    getBounds() {
+        return new Bounds( {left:0, right:0, top:0, bottom:0, front:0, back:0} );
+    }
 }
 
 /* A position in 3D world/container coordinates
