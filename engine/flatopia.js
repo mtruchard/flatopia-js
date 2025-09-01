@@ -1078,34 +1078,34 @@ class Bounds {
     translate(pos) {
         return new Bounds( {left:this._left+pos.x, right:this._right+pos.x, front:this._front+pos.y, back:this._back+pos.y, top:this._top+pos.h, bottom:this._bottom+pos.h} );
     }
-    intersectsWith(r2) {
-        return !(r2.left > this._right || 
-               r2.right < this._left ||
-               r2.bottom > this._top ||
-               r2.top < this._bottom ||
-               r2.front > this._back ||
-               r2.back < this._front
+    intersectsWith(b2) {
+        return !(b2._left > this._right || 
+               b2._right < this._left ||
+               b2._bottom > this._top ||
+               b2._top < this._bottom ||
+               b2._front > this._back ||
+               b2._back < this._front
                );
     }
-    contains(r2) {
-        return (this._left <= r2.left &&
-               this._right >= r2.right &&
-               this._top >= r2.top &&
-               this._bottom <= r2.bottom &&
-               this._front <= r2.front &&
-               this._back >= r2.back);
+    contains(b2) {
+        return (this._left <= b2._left &&
+               this._right >= b2._right &&
+               this._top >= b2._top &&
+               this._bottom <= b2._bottom &&
+               this._front <= b2._front &&
+               this._back >= b2._back);
     }
-    keepInside(r2) {
+    keepInside(b2) {
         // Returns deltaX/deltaY/deltaH needed to keep rect inside this rect
         var dx = 0;
         var dy = 0;
         var dh = 0;
-        if ( this._left > r2.left ) dx = this._left - r2.left;
-        if ( this._right < r2.right ) dx = this._right - r2.right;
-        if ( this._top < r2.top ) dh = this._top - r2.top;
-        if ( this._bottom > r2.bottom ) dh = this._bottom - r2.bottom;
-        if ( this._front > r2.front ) dy = this._front - r2.front;
-        if ( this._back < r2.back ) dy = this._back - r2.back;
+        if ( this._left > b2._left ) dx = this._left - b2._left;
+        if ( this._right < b2._right ) dx = this._right - b2._right;
+        if ( this._top < b2._top ) dh = this._top - b2._top;
+        if ( this._bottom > b2._bottom ) dh = this._bottom - b2._bottom;
+        if ( this._front > b2._front ) dy = this._front - b2._front;
+        if ( this._back < b2._back ) dy = this._back - b2._back;
         return new Point( {x:dx, y:dy, h:dh} );
     }
     draw( ctx, containerPos) {
