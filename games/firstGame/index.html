@@ -16,8 +16,7 @@
 
 world = new World({
     canvasId:"canvas",
-    consoleId:"console",
-    width:1500, height:800
+    consoleId:"console"
 });
 
 /*
@@ -49,7 +48,6 @@ pikachu.do(new Follow( {follower:pikachu, leader:alien, relX:-100, relY:50, rand
 var mountainPlace = new Place( {
     name: "The Mountain Place",
     backgroundUrl: "mountainPlace.jpg",
-    bounds: new Bounds( {left:-750, right:750, bottom:0, top:800, front: -100, back: 800} ),
     objects: [
         {type: Thing, name:"flower", startX: 200, startY: 600, imageUrl:"flower.png"}
     ]
@@ -57,25 +55,25 @@ var mountainPlace = new Place( {
 var onTheStairs = new Place( {
     name: "On The Stairs",
     backgroundUrl: "mountainPlace.jpg",
-    bounds: new Bounds( {left:-750, right:750, bottom:0, top:800, front: 750, back: 3000} ),
+    bounds: new Bounds( {left:-750, right:750, bottom:0, top:800, front: 1000, back: 2000} ),
     objects: [
         {type: Thing, name:"flower", startX: 200, startY: 600, imageUrl:"flower.png"}
     ]
 });
-var mountainStairs = new Portal( {name:"Mountain Stairs", x:66,y:710,h:0, width:100,height:10,depth:90, actionFunction:(e=>{
+var mountainStairs = new Portal( {name:"Mountain Stairs", x:66,y:910,h:0, width:300,height:10,depth:10, actionFunction:(e=>{
     if ( e.actor === alien ) {
-        alien.moveTo( {place:onTheStairs,x:940,y:311,h:0});
-        alien.moveTo( {place:mountainTop,x:500,y:500,h:0});
+        //alien.TeleportTo( {place:onTheStairs,x:940,y:311,h:0});
+        alien.TeleportTo( {place:mountainTop,x:0,y:10,h:0});
     }
 })});
 mountainPlace.add(mountainStairs);
-var forestPassage = new Portal( {name:"forestPassage", x:716,y:250,h:0, width:10,height:10,depth:1000, actionFunction:(e=>{
+var forestPassage = new Portal( {name:"forestPassage", x:990,y:500,h:0, width:10,height:10,depth:1000, actionFunction:(e=>{
     if ( e.actor === alien ) {
-        alien.moveTo( {place:forestPlace,x:-458,y:2,h:0});
+        alien.TeleportTo( {place:forestPlace,x:-990,y:20,h:0});
     }
 })});
 mountainPlace.add(forestPassage);
-var forestSign = new Img( {name:"forestSign", x:533,y:339,h:0, imageUrl:"forestSign.png"} );
+var forestSign = new Img( {name:"forestSign", x:800,y:500,h:0, imageUrl:"forestSign.png"} );
 mountainPlace.add(forestSign);
 
 /*
@@ -83,30 +81,28 @@ mountainPlace.add(forestSign);
  */
 var mountainTop = new Place( {
     name: "Mountain Top",
-    backgroundUrl: "mountainTop.jpg",
-    bounds: new Bounds( {left:-750, right:750, bottom:0, top:800, front: -100, back: 800} )
+    backgroundUrl: "mountainTop.jpg"
 });
-var mountainPlacePassage = new Portal( {name:"mountainPlacePassage", left:0, top:790, right:1500, bottom:800, actionFunction:(e=>{
+var stairsGoingDown = new Portal( {name:"stairsGoingDown", x:0,y:0,h:0, width:2000,height:10,depth:10, actionFunction:(e=>{
     if ( e.actor === alien ) {
-        alien.moveTo( {place:mountainPlace,x:716,y:200,h:0});
+        alien.TeleportTo( {place:mountainPlace,x:66,y:800,h:0});
     }
 })});
-mountainTop.add(mountainPlacePassage);
+mountainTop.add(stairsGoingDown);
 
 /*
  * FOREST PLACE
  */
 var forestPlace = new Place( {
     name: "Forest Place",
-    backgroundUrl: "forestPlace.jpg",
-    bounds: new Bounds( {left:-750, right:750, bottom:0, top:800, front: -100, back: 800} )
+    backgroundUrl: "forestPlace.jpg"
 });
-var mountainPlacePassage2 = new InvisibleBox( {name:"mountainPlacePassage2", left:0, top:620, right:10, bottom:800, actionFunction:(e=>{
+var backToMountainPlace = new Portal( {name:"backToMountainPlace", x:-990,y:500,h:0, width:10,height:10,depth:1000, actionFunction:(e=>{
     if ( e.actor === alien ) {
-        alien.moveTo( {place:mountainPlace,x:66,y:710,h:0});
+        alien.TeleportTo( {place:mountainPlace,x:980,y:500,h:0});
     }
 })});
-forestPlace.add(mountainPlacePassage2);
+forestPlace.add(backToMountainPlace);
 
 world.setPlace( mountainPlace );
 world.setMainCharacter( alien );

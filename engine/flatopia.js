@@ -21,7 +21,6 @@ class World {
         if (attributes.controller) {
             this.addController(attributes.controller);
         }
-        this.isReady = false;
         this.place = null;
         this.mainCharacter = null;
         this._createMode = (attributes.createMode)?attributes.createMode:false;
@@ -31,34 +30,29 @@ class World {
         }
         
         var self = this;
-        window.onload = function() {
-            //self.$canvas = $('#'+self.canvasId);
-            self.canvas = document.getElementById(self.canvasId);
-            self.canvas.addEventListener('mousedown', self.mouseEvent.bind(self), false );
-            self.canvas.addEventListener('touchstart', self.mouseEvent.bind(self), false );
-            self.canvas.addEventListener('click', self.mouseEvent.bind(self), false );
-            self.canvasWidth = self.canvas.width;
-            self.canvasHeight = self.canvas.height;
-            var canvasContext = self.canvas.getContext("2d");
-            var cameraPosition = new Position({x:0, y: -1000, h: 300});
-            self.ctx = new DrawingContex(canvasContext, self.canvasWidth/2, self.canvasHeight*0.9, cameraPosition, self._createMode); // multiply by 0.9 to give a little room in "front"
-            if ( !self.place ) {
-                var bounds = new Bounds( {left:-self.canvasWidth/2, right:self.canvasWidth/2, front: -100, back: self.canvasHeight, bottom:0, top:self.canvasHeight} );
-                self.setPlace( new Place( {
-                    backgroundUrn: null,
-                    bounds: bounds
-                } ) );
-            }
-            self.isReady = true;
-            
-            self.fireEvent( {
-                type: 'ready'
-            });
-            setInterval( function() {
-                self.draw();
-                self.act();
-            }, 1000 / self.tps);
-        };
+        this.onloadPromise =  new Promise(resolve => {
+            window.onload = function() {
+                //self.$canvas = $('#'+self.canvasId);
+                self.canvas = document.getElementById(self.canvasId);
+                self.canvas.addEventListener('mousedown', self.mouseEvent.bind(self), false );
+                self.canvas.addEventListener('touchstart', self.mouseEvent.bind(self), false );
+                self.canvas.addEventListener('click', self.mouseEvent.bind(self), false );
+                self.canvasWidth = self.canvas.width;
+                self.canvasHeight = self.canvas.height;
+                var canvasContext = self.canvas.getContext("2d");
+                var cameraPosition = new Position({x:0, y: -1000, h: 300});
+                var scale = self.canvasWidth / (DEFAULT_PLACE_BOUNDS.width*0.8); // make the bounds slightly wider than the canvas
+                self.ctx = new DrawingContex(canvasContext, self.canvasWidth/2, self.canvasHeight*0.95, cameraPosition, scale, self._createMode); // multiply by 0.95 to give a little room in "front"
+                //self.fullScreenBounds = new Bounds( {left:-self.canvasWidth/1.7, right:self.canvasWidth/1.7, front: 0, back: self.canvasHeight*2, bottom:0, top:self.canvasHeight} );
+                //self.fullScreenBounds = new Bounds( {left:-1000, right:1000, front: 0, back: 2000, bottom:0, top:1000} );
+                resolve( self );
+                
+                setInterval( function() {
+                    self.draw();
+                    self.act();
+                }, 1000 / self.tps);
+            };
+        });
         
         document.onkeydown = function(e) {
             var key = checkKey(e);
@@ -68,11 +62,6 @@ class World {
                 pos: null
             });
         };
-    }
-    
-    ready( readyFunction ) {
-        this.readyFunction = readyFunction;
-        if ( this.isReady ) this.readyFunction();
     }
     
     setPlace( place ) {
@@ -111,8 +100,11 @@ class World {
     clear() {
         this.canvas.width = this.canvas.width; // clears the canvas
     }
-    getMousePos(evt) {
-    }
+
+    //async getFullScreenBounds() {
+    //    await this.onloadPromise;
+    //    return this.fullScreenBounds;
+    //}
     
     /*
      * ACT
@@ -199,12 +191,13 @@ class World {
  * @param cameraPosition is the 3D point of the camera looking in to the canvas
  */
 class DrawingContex {
-    constructor( canvas, canvasOffsetX, canvasOffsetY, cameraPosition, createMode ) {
+    constructor( canvas, canvasOffsetX, canvasOffsetY, cameraPosition, scale, createMode ) {
         this.canvas = canvas;
         this.createMode = createMode;
-        this.offsetX = canvasOffsetX;
-        this.offsetY = canvasOffsetY;
+        this.offsetX = canvasOffsetX / scale;
+        this.offsetY = canvasOffsetY / scale;
         this.cameraPosition = cameraPosition;
+        this.scale = scale;
         this.pos = null;
     }
     
@@ -239,6 +232,8 @@ class DrawingContex {
         // Y2d = Yo - ((H - Hc) * (-Yc/(Y-Yc))) - Hc  // H goes opposite direction from Y2d
         var x2d = this.offsetX + ((p2.x-this.cameraPosition.x) * f) + this.cameraPosition.x;
         var y2d = this.offsetY - ((p2.h-this.cameraPosition.h) * f) - this.cameraPosition.h;
+        x2d = x2d * this.scale;
+        y2d = y2d * this.scale;
         return new Point2D({x: x2d, y: y2d });
     }
     
@@ -247,20 +242,17 @@ class DrawingContex {
      * Returns null if the 2D point does not hit that xy surface
      */
     tFromXY(x,y) {
+        x = x / this.scale;
+        y = y / this.scale;
+
         if ( y < this.offsetY - this.cameraPosition.h  ) { // above eyeLevel  ??? is this correct
             return null;
         }
         
-        // WRONG Y = Yc*Hc/(Y2d + Hc + Yo) + Yc
         // Y = Yc*Hc/((Yo-Y2d-Hc) + Yc
         var y3 = this.cameraPosition.y * this.cameraPosition.h / (this.offsetY - y - this.cameraPosition.h) + this.cameraPosition.y;
-        // WRONGX = (X2d - Xc)*(Y-Yc)/Yc + Xc
         // X = Xc - (X2d - Xo - Xc)*(Y-Yc)/Yc
-        var x3 = this.cameraPosition.x - (x - this.offsetX - this.cameraPosition.x) * ((y3 - this.cameraPosition.y)/this.cameraPosition.y)
-        //var x3 = (x - this.offsetX - this.cameraPosition.x - x) * ((y3 - this.cameraPosition.y)/this.cameraPosition.y) + this.cameraPosition.x;
-        
-        //var y3 = (this.cameraPosition.h * this.cameraPosition.y) / (this.cameraPosition.h + this.offsetY - y) - this.cameraPosition.y;
-        //var x3 = (this.offsetX + this.cameraPosition.x - x) / (this.cameraPosition.y/(y3 - this.cameraPosition.y)) + this.cameraPosition.x;
+        var x3 = this.cameraPosition.x - (x - this.offsetX - this.cameraPosition.x) * ((y3 - this.cameraPosition.y)/this.cameraPosition.y);
         
         // TODO need to translate to handle position other than 0,0,0
         return new Point({x: x3, y: y3, h: 0});
@@ -286,7 +278,11 @@ class Place {
     constructor(attributes) {
         this.name = attributes.name;
         this.backgroundUrl = attributes.backgroundUrl;
-        this.bounds = attributes.bounds;
+        if ( attributes.bounds ) {
+            this.bounds = attributes.bounds;
+        } else {
+            this.bounds = DEFAULT_PLACE_BOUNDS;
+        }
         this.objects = [];
         if ( attributes.objects ) {
             for ( var i=0; i<attributes.objects.length; i++) {
@@ -356,7 +352,7 @@ class Place {
     onEvent( event ) {
         if ( this.eventFunction ) this.eventFunction(event);
         for ( const object of this.objects ) {
-            if ( (event.actor === this || event.object === object) ) {
+            if ( (event.actor === object || event.object === object) ) {
                 object.onEvent( event );
             }
         }
@@ -440,7 +436,6 @@ class Thing {
     }*/
 
     setFrame( frame ) {}
-    isReady( frame ) { return true; }
     do( action ) {
         action.part = this;
         this.actions.push( action );
@@ -486,7 +481,14 @@ class Thing {
         if ( typeof p.h === 'undefined' ) {
             p.h = this.pos.h;
         }
-        this.actions.push( new MoveTo( {actor:this, place: attributes.place?attributes.place:null, pos:p} ) );
+        this.actions.push( new MoveTo( {actor:this, pos:p} ) );
+    }
+    TeleportTo( attributes ) {
+        var p = new Position(attributes);
+        if ( typeof p.h === 'undefined' ) {
+            p.h = this.pos.h;
+        }
+        this.actions.push( new TeleportTo( {actor:this, place: attributes.place?attributes.place:null, pos:p} ) );
     }
     stop() {
         this.actions = [];
@@ -515,23 +517,6 @@ class Thing {
         
         return delta;
     }
-    
-    /*var numResourcesLoaded = 0;
-    var totalResources = 0;
-    function resourceLoaded() {
-        numResourcesLoaded += 1;
-        if(numResourcesLoaded === totalResources) {
-            this.feetRect = new Rectangle( this.images.main.width*0.1, this.images.main.height*0.8, this.images.main.width*0.9, this.images.main.height );
-            this.setPosition( this.pos.x, this.pos.y ); // adjust this.topLeft based on image
-            this.isReady = true;
-            if ( this.readyFunction ) this.readyFunction();
-        }
-    }*/
-    
-    /*ready( readyFunction ) {
-        this.readyFunction = readyFunction;
-        if ( this.isReady ) this.readyFunction();
-    };*/
     
     onEvent( event ) {
         if ( this.eventFunction ) this.eventFunction(event)
@@ -566,8 +551,6 @@ class CompositeThing extends Thing {
         super.draw( ctx, containerPos );
     }
 
-    setFrame( frame ) {}
-    isReady( frame ) { return true; }
     do( action ) {
         action.part = this;
         this.actions.push( action );
@@ -609,23 +592,6 @@ class CompositeThing extends Thing {
         var objects = [];
         return objects;
     }
-    
-    /*var numResourcesLoaded = 0;
-    var totalResources = 0;
-    function resourceLoaded() {
-        numResourcesLoaded += 1;
-        if(numResourcesLoaded === totalResources) {
-            this.feetRect = new Rectangle( this.images.main.width*0.1, this.images.main.height*0.8, this.images.main.width*0.9, this.images.main.height );
-            this.setPosition( this.pos.x, this.pos.y ); // adjust this.topLeft based on image
-            this.isReady = true;
-            if ( this.readyFunction ) this.readyFunction();
-        }
-    }*/
-    
-    /*ready( readyFunction ) {
-        this.readyFunction = readyFunction;
-        if ( this.isReady ) this.readyFunction();
-    }*/
 }
 
 class Character extends CompositeThing {
@@ -854,12 +820,9 @@ class Img extends Thing {
         this.image = new Image();
         var self = this;
         this.image.onload = function() {
-            self._resourceLoaded();
+            self.ready = true;
         };
         this.image.src = imageUrl;
-    }
-    _resourceLoaded() {
-        this.ready = true;
     }
     draw( ctx, containerPos ) {
         if ( !this.ready ) return;
@@ -874,9 +837,6 @@ class Img extends Thing {
     getBounds() {
         var halfWidth = this.image.width/2;
         return new Bounds( {left:-halfWidth, right:halfWidth, top:this.image.height, bottom:0, front:0, back:0} );
-    }
-    isReady( frame ) {
-        return this.ready;
     }
 }
 
@@ -893,7 +853,6 @@ class AnimatedThing extends CompositeThing {
             }
         }*/
         this.partIdx = 0;
-        this.ready = false;
         this.bounds = null;
     }
     
@@ -908,16 +867,6 @@ class AnimatedThing extends CompositeThing {
             this.bounds = this.parts[0].getBounds().translate(this.pos);
         }
         return this.bounds;
-    }
-    isReady() {
-        if ( this.ready ) return true;
-        for ( var i=0; i<this.parts.length;i++) {
-            if ( !parts[i].isReady() ) {
-                return false;
-            }
-        }
-        this.isReady = true;
-        return true;
     }
     setFrame( frame ) {
         if ( typeof frame === 'string' ) {
@@ -1195,7 +1144,6 @@ class MoveTo extends Action {
     constructor(attributes) {
         super(attributes);
         this.actor = attributes.actor;
-        this.place = attributes.place;
         if ( attributes.target ) {
             this.target = new Position(attributes.target);
         } else if ( attributes.pos ) {
@@ -1206,9 +1154,6 @@ class MoveTo extends Action {
         this.moveRate = 10;
     }
     do() {
-        if ( this.place ) {
-            this.place.add(this.actor);
-        }
         var x = this.actor.getPosition().x;
         var y = this.actor.getPosition().y;
         var h = this.actor.getPosition().h;
@@ -1294,6 +1239,28 @@ class MoveBy extends Action {
         var delta = this.actor.setPosition({x:x,y:y,h:h});
         if ( delta.x !== 0 || delta.y !== 0 || delta.h !== 0 ) return true; // movement done if we hit bounds 
         return ( x === this.target.x ) && (y === this.target.y ) && (h === this.target.h );  // true if movement done
+    }
+}
+
+class TeleportTo extends Action {
+    constructor(attributes) {
+        super(attributes);
+        this.actor = attributes.actor;
+        this.place = attributes.place;
+        if ( attributes.target ) {
+            this.target = new Position(attributes.target);
+        } else if ( attributes.pos ) {
+            this.target = new Position(attributes.pos);
+        } else {
+            this.target = new Position(attributes);
+        }
+    }
+    do() {
+        if ( this.place ) {
+            this.place.add(this.actor);
+        }
+        var delta = this.actor.setPosition(this.target);
+        return true;
     }
 }
 
@@ -1553,3 +1520,6 @@ function captureConsole(consoleId) {
         })(console[verb], verb, consoleDiv);
     });
 }
+
+
+const DEFAULT_PLACE_BOUNDS = new Bounds( {left:-1000, right:1000, front: 0, back: 1000, bottom:0, top:1000} ); 
